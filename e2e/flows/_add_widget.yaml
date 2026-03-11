@@ -4,8 +4,13 @@
 # Post-condition: WidgetConfigActivity is open ("Configure CU View" is visible).
 #
 # Pixel Launcher widget placement:
-#   long-press empty home screen space → tap "Widgets" → scroll to "CU View" →
-#   tap to expand → long-press the preview IMAGE → launcher opens config activity.
+#   long-press empty home screen space → tap "Widgets" → search "CU View" →
+#   pressKey:Back (dismiss keyboard) → tap row[index:1] to expand →
+#   long-press preview card → launcher opens WidgetConfigActivity.
+#
+# Using search avoids the unpredictable scroll/pin behaviour that differs
+# between host-GPU (local) and software-GPU (CI) rendering modes.
+# index:1 skips the search-bar's own "CU View" text and targets the row title.
 appId: io.github.raven_wing.cuview
 ---
 # ── Open the widget picker ────────────────────────────────────────────────────
@@ -17,26 +22,25 @@ appId: io.github.raven_wing.cuview
     timeout: 5000
 - tapOn: "Widgets"
 
-# ── Scroll to and expand the CU View section ─────────────────────────────────
-- scrollUntilVisible:
-    element:
-      text: "CU View"
-    direction: DOWN
-    timeout: 15000
-- tapOn: "CU View"
+# ── Search for the widget ─────────────────────────────────────────────────────
+- tapOn: "Search"
+- inputText: "CU View"
+- extendedWaitUntil:
+    visible: "CU View"
+    timeout: 5000
+# Dismiss keyboard before interacting with the result row
+- pressKey: Back
 
-# ── Long-press the widget preview image to initiate placement ─────────────────
-# After expansion the preview card is pinned to the top of the picker.
-# Wait for the description to confirm the card is rendered, then long-press
-# at y=25% which falls inside the preview image in both local (host GPU) and
-# CI (swiftshader) environments — above the text labels that start at ~48%.
-- scrollUntilVisible:
-    element:
-      text: "Displays tasks from a CU View"
-    direction: DOWN
-    timeout: 10000
+# ── Expand and long-press the preview card ───────────────────────────────────
+# index:1 skips the search-bar text and targets the result-row title.
+- tapOn:
+    text: "CU View"
+    index: 1
+- extendedWaitUntil:
+    visible: "Displays tasks from a CU View"
+    timeout: 5000
 - longPressOn:
-    point: "50%, 28%"
+    point: "50%, 55%"
 
 # ── WidgetConfigActivity opens with a real widget ID ─────────────────────────
 - extendedWaitUntil:
