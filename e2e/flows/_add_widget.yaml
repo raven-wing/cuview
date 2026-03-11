@@ -18,9 +18,11 @@ appId: io.github.raven_wing.cuview
 - tapOn: "Widgets"
 
 # ── Expand the CU View section ──────────────────────────────────────────────
-- extendedWaitUntil:
-    visible: "CU View"
-    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: "CU View"
+    direction: DOWN
+    timeout: 15000
 - tapOn: "CU View"
 - swipe:
     start: "50%, 73%"
