@@ -5,8 +5,7 @@
 #
 # Pixel Launcher widget placement:
 #   long-press empty home screen space → tap "Widgets" → scroll to "CU View" →
-#   tap to expand → scroll to widget preview → long-press preview card →
-#   launcher opens WidgetConfigActivity.
+#   tap to expand → long-press the preview IMAGE → launcher opens config activity.
 appId: io.github.raven_wing.cuview
 ---
 # ── Open the widget picker ────────────────────────────────────────────────────
@@ -26,19 +25,18 @@ appId: io.github.raven_wing.cuview
     timeout: 15000
 - tapOn: "CU View"
 
-# ── Scroll to the widget preview card and long-press it ───────────────────────
-# After expansion the preview card appears below the row header, potentially
-# off-screen. scrollUntilVisible brings the card's unique description text into
-# view, then longPressOn triggers placement without relying on fixed coordinates.
+# ── Long-press the widget preview image to initiate placement ─────────────────
+# After expansion the preview card is pinned to the top of the picker.
+# Wait for the description to confirm the card is rendered, then long-press
+# at y=25% which falls inside the preview image in both local (host GPU) and
+# CI (swiftshader) environments — above the text labels that start at ~48%.
 - scrollUntilVisible:
     element:
       text: "Displays tasks from a CU View"
     direction: DOWN
     timeout: 10000
-# Long-press the preview IMAGE (upper portion of the card), not the text labels
-# below it — Pixel Launcher only initiates placement from the rendered preview area.
 - longPressOn:
-    point: "50%, 45%"
+    point: "50%, 28%"
 
 # ── WidgetConfigActivity opens with a real widget ID ─────────────────────────
 - extendedWaitUntil:
