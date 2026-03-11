@@ -1,0 +1,17 @@
+# Subflow: tap "Connect with ClickUp" → wait for "Connected ✓".
+#
+# Pre-condition:  MainActivity is visible with "Connect with ClickUp" button.
+# Post-condition: "Connected ✓" is visible.
+#
+# Mock mode  (USE_MOCK_API=true): connects instantly, no browser opens.
+# Real mode  (USE_MOCK_API=false): Chrome Custom Tab opens for ClickUp OAuth.
+#   The Cloudflare Worker fires an intent:// callback which brings MainActivity
+#   to the front; "Connected ✓" appears once the token is saved.
+#   Chrome interaction (tapping "Connect Workspace") must happen out-of-band
+#   during a real-mode run.
+appId: io.github.raven_wing.cuview
+---
+- tapOn: "Connect with ClickUp"
+- extendedWaitUntil:
+    visible: "Connected ✓"
+    timeout: 30000

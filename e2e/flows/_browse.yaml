@@ -1,0 +1,44 @@
+# Subflow: browse the view/list tree and select a target.
+#
+# Pre-condition:  "Connected ✓" is visible; user is at the root nav level.
+# Post-condition: a target is selected and the task preview has loaded
+#                 (Save & Add Widget button is enabled).
+#
+# Required env vars (set in the calling flow or via shell export):
+#   CUE_SPACE   — exact name of the ClickUp Space to navigate into
+#   CUE_LIST    — exact name of the List to select as the sync target
+#
+# Optional env vars:
+#   CUE_FOLDER  — folder name; leave empty ("") if the list is folderless
+appId: io.github.raven_wing.cuview
+---
+- tapOn: "Browse Views"
+
+# ── Space level ───────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ${CUE_SPACE}
+    timeout: 10000
+- tapOn: ${CUE_SPACE}
+
+# ── Folder level (skipped when CUE_FOLDER is empty) ──────────────────────────
+- tapOn:
+    text: ${CUE_FOLDER}
+    optional: true     # no-op if the list lives directly under the space
+
+# ── List level ────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ${CUE_LIST}
+    timeout: 10000
+- tapOn: ${CUE_LIST}
+
+# ── List-selection level ──────────────────────────────────────────────────────
+# The tap above navigates to ListSelectionLevel.  After Maestro's tapOn
+# completes the UI has settled, so ${CUE_LIST} is now the selectable row in
+# the new screen.  Tap it explicitly to set selectedTarget.
+# ("SELECT IN <LIST>" section label is not in the a11y tree and cannot be
+# asserted via Maestro.)
+- extendedWaitUntil:
+    visible: ${CUE_LIST}
+    timeout: 5000
+- tapOn: ${CUE_LIST}
+

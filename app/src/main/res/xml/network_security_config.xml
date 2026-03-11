@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Explicitly disallow cleartext HTTP. This is already the Android default for
+         API 28+, but declaring it here makes the policy auditable and prevents
+         accidental regression if targetSdk or build config changes. -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,0 +1,39 @@
+# Subflow: place the CU View widget on the home screen.
+#
+# Pre-condition:  home screen is visible.
+# Post-condition: WidgetConfigActivity is open ("Configure CU View" is visible).
+#
+# Pixel Launcher widget placement:
+#   long-press empty home screen space → tap "Widgets" → expand "CU View" →
+#   long-press + drag upward onto home screen → launcher opens config activity.
+appId: io.github.raven_wing.cuview
+---
+# ── Open the widget picker ────────────────────────────────────────────────────
+- pressKey: Home
+- longPressOn:
+    point: "50%, 40%"
+- extendedWaitUntil:
+    visible: "Widgets"
+    timeout: 5000
+- tapOn: "Widgets"
+
+# ── Expand the CU View section ──────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "CU View"
+    timeout: 10000
+- tapOn: "CU View"
+- swipe:
+    start: "50%, 73%"
+    end: "50%, 20%"
+    duration: 1000
+
+# ── Drag the widget preview onto the home screen ─────────────────────────────
+# After expansion the widget preview card is centred on screen (~73% height).
+# longPressOn picks up the widget; the following swipe drags it to home screen.
+- longPressOn:
+    point: "50%, 50%"
+
+# ── WidgetConfigActivity opens with a real widget ID ─────────────────────────
+- extendedWaitUntil:
+    visible: "Configure CU View"
+    timeout: 15000
