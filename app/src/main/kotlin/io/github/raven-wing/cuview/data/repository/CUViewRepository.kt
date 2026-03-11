@@ -56,7 +56,7 @@ class CUViewRepository(
     suspend fun syncTasks(widgetId: Int): Result<Unit> {
         val token = securePreferences.apiToken
         val targetId = securePreferences.viewId(widgetId)
-        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set(${token.take(6)}…)" else "null"} target=$targetId")
+        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} target=$targetId")
         token ?: return Result.failure(Exception("API token not configured"))
         targetId ?: return Result.failure(Exception("View not configured"))
 
