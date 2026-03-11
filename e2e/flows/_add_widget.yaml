@@ -4,8 +4,9 @@
 # Post-condition: WidgetConfigActivity is open ("Configure CU View" is visible).
 #
 # Pixel Launcher widget placement:
-#   long-press empty home screen space → tap "Widgets" → expand "CU View" →
-#   long-press + drag upward onto home screen → launcher opens config activity.
+#   long-press empty home screen space → tap "Widgets" → scroll to "CU View" →
+#   tap to expand → scroll to widget preview → long-press preview card →
+#   launcher opens WidgetConfigActivity.
 appId: io.github.raven_wing.cuview
 ---
 # ── Open the widget picker ────────────────────────────────────────────────────
@@ -17,23 +18,27 @@ appId: io.github.raven_wing.cuview
     timeout: 5000
 - tapOn: "Widgets"
 
-# ── Expand the CU View section ──────────────────────────────────────────────
+# ── Scroll to and expand the CU View section ─────────────────────────────────
 - scrollUntilVisible:
     element:
       text: "CU View"
     direction: DOWN
     timeout: 15000
 - tapOn: "CU View"
-- swipe:
-    start: "50%, 73%"
-    end: "50%, 20%"
-    duration: 1000
 
-# ── Drag the widget preview onto the home screen ─────────────────────────────
-# After expansion the widget preview card is centred on screen (~73% height).
-# longPressOn picks up the widget; the following swipe drags it to home screen.
+# ── Scroll to the widget preview card and long-press it ───────────────────────
+# After expansion the preview card appears below the row header, potentially
+# off-screen. scrollUntilVisible brings the card's unique description text into
+# view, then longPressOn triggers placement without relying on fixed coordinates.
+- scrollUntilVisible:
+    element:
+      text: "Displays tasks from a CU View"
+    direction: DOWN
+    timeout: 10000
+# Long-press the preview IMAGE (upper portion of the card), not the text labels
+# below it — Pixel Launcher only initiates placement from the rendered preview area.
 - longPressOn:
-    point: "50%, 50%"
+    point: "50%, 45%"
 
 # ── WidgetConfigActivity opens with a real widget ID ─────────────────────────
 - extendedWaitUntil:

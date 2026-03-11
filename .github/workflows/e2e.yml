@@ -66,9 +66,7 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          # Disable animations — Maestro taps can miss elements during transitions
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
           script: make e2e-all
 
       - name: Upload Maestro report on failure
