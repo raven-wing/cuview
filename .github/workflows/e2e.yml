@@ -47,9 +47,8 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
-      # google_apis target includes Pixel Launcher — required for widget placement in _add_widget.yaml
       - name: Run emulator + Maestro flows
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
         with:
           api-level: 34
           target: google_apis
@@ -60,7 +59,7 @@ jobs:
 
       - name: Upload Maestro report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: maestro-report
           path: ~/.maestro/tests/
