@@ -69,7 +69,7 @@ Uses Robolectric for tests that need Android context; plain JUnit for pure Kotli
 [Maestro](https://maestro.mobile.dev/) 1.40.0 must be installed at `~/.maestro/bin/maestro`.
 
 ```bash
-./e2e/run.sh [flow_name]   # defaults to 02_disconnect_reconnect
+./e2e/run.sh [flow_name]   # defaults to 01_disconnect_reconnect
 ```
 
 | Flag | Effect |
@@ -77,19 +77,10 @@ Uses Robolectric for tests that need Android context; plain JUnit for pure Kotli
 | `SKIP_BUILD=1` | Skip Gradle build + ADB install |
 | `SKIP_CLEAR=1` | Keep stored token between runs |
 
-Environment variables required for flows that browse the workspace:
-
-```bash
-export CUE_SPACE="My Space"
-export CUE_FOLDER="My Folder"   # optional
-export CUE_LIST="My List"
-```
-
 | Flow | Description |
 |------|-------------|
 | `00_smoke.yaml` | Place widget, verify config screen loads — no OAuth needed |
-| `01_connect_and_add.yaml` | Happy path: place → connect → browse → save |
-| `02_disconnect_reconnect.yaml` | Regression: connect → disconnect → reconnect → browse → save |
+| `01_disconnect_reconnect.yaml` | Regression: connect → disconnect → reconnect → browse → save |
 
 ## CI
 

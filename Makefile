@@ -39,12 +39,12 @@ e2e-all: install ## Build + install + run all E2E flows (state reset between eac
 	$(MAESTRO) test e2e/flows/00_smoke.yaml
 	adb shell pm clear $(LAUNCHER)
 	adb shell pm clear $(PACKAGE)
-	$(MAESTRO) test e2e/flows/02_disconnect_reconnect.yaml
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 
 e2e: install ## Full E2E: build + install + clear + reconnect flow
 	adb shell pm clear $(LAUNCHER)
 	adb shell pm clear $(PACKAGE)
-	$(MAESTRO) test e2e/flows/02_disconnect_reconnect.yaml
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 
 e2e-smoke: ## Smoke flow (no build, clears state)
 	adb shell pm clear $(LAUNCHER)
@@ -54,7 +54,7 @@ e2e-smoke: ## Smoke flow (no build, clears state)
 e2e-reconnect: ## Disconnect/reconnect regression flow (no build, clears state)
 	adb shell pm clear $(LAUNCHER)
 	adb shell pm clear $(PACKAGE)
-	$(MAESTRO) test e2e/flows/02_disconnect_reconnect.yaml
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 
 e2e-fast: ## Run reconnect flow without rebuilding or clearing state
-	$(MAESTRO) test e2e/flows/02_disconnect_reconnect.yaml
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml

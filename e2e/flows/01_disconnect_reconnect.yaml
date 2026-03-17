@@ -8,12 +8,7 @@
 #
 # Run via: ./e2e/run.sh 02_disconnect_reconnect.yaml
 #
-# Edit the env block below to match your ClickUp workspace.
 appId: io.github.raven_wing.cuview
-env:
-  CUE_SPACE: "Mammals"
-  CUE_FOLDER: "Hoofed Animals"
-  CUE_LIST: "Horse"
 ---
 # ── 0. Connect in the app ─────────────────────────────────────────────────────
 - launchApp
