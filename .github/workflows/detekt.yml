@@ -25,15 +25,22 @@ jobs:
           detekt_version: 1.23.8
 
       - name: Run Detekt
+        id: detekt
         run: |
+          set +e
           detekt-cli \
             --input app/src/main/kotlin,app/src/test/kotlin,lint-rules/src/main/kotlin,lint-rules/src/test/kotlin \
             --config detekt.yml \
             --report sarif:detekt.sarif.json
+          echo "exit-code=$?" >> $GITHUB_OUTPUT
 
       - name: Upload SARIF to GitHub Security tab
-        if: always()
+        if: hashFiles('detekt.sarif.json') != ''
         uses: github/codeql-action/upload-sarif@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v4.33.0
         with:
           sarif_file: detekt.sarif.json
           category: detekt
+
+      - name: Fail on Detekt violations or error
+        if: steps.detekt.outputs.exit-code != '0'
+        run: exit ${{ steps.detekt.outputs.exit-code }}
