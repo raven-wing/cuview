@@ -56,7 +56,7 @@ class CUViewRepository(
     suspend fun syncTasks(widgetId: Int): Result<Unit> {
         val token = securePreferences.apiToken
         val targetId = securePreferences.viewId(widgetId)
-        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} target=$targetId")
+        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} target=${if (targetId != null) "set" else "null"}")
         token ?: return Result.failure(Exception("API token not configured"))
         targetId ?: return Result.failure(Exception("View not configured"))
 
@@ -158,7 +158,11 @@ class CUViewRepository(
     suspend fun fetchListViews(listId: String, token: String): Result<List<CUView>> =
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.listViews[listId] ?: emptyList())
-            Result.success(extractListViews(apiService.fetchListViews(listId, token).getOrNull()))
+            try {
+                Result.success(extractListViews(apiService.fetchListViews(listId, token).getOrThrow()))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
         }
 
     // Strip URLs (which may contain sensitive path segments like view/list IDs) from error
@@ -170,7 +174,7 @@ class CUViewRepository(
             .take(200)
     }
 
-    private fun extractListViews(response: ListViewsResponse?): List<CUView> =
-        listOfNotNull(response?.requiredViews?.list) +
-            (response?.views?.filter { it.type == "list" } ?: emptyList())
+    private fun extractListViews(response: ListViewsResponse): List<CUView> =
+        listOfNotNull(response.requiredViews?.list) +
+            response.views.filter { it.type == "list" }
 }

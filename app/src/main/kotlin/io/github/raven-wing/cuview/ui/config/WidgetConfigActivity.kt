@@ -131,16 +131,11 @@ class WidgetConfigActivity : ComponentActivity() {
                     prefs.toMutablePreferences().apply { this[CUViewWidget.REFRESH_KEY] = (this[CUViewWidget.REFRESH_KEY] ?: 0) + 1 }
                 }
             }
+            TaskSyncWorker.enqueueImmediateSync(this@WidgetConfigActivity, widgetIdCapture)
+            TaskSyncWorker.enqueuePeriodicSync(this@WidgetConfigActivity, widgetIdCapture)
+            setResult(RESULT_OK, Intent().apply { putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetIdCapture) })
+            if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: setResult(RESULT_OK) widgetId=$widgetIdCapture")
+            finish()
         }
-
-        TaskSyncWorker.enqueueImmediateSync(this, appWidgetId)
-        TaskSyncWorker.enqueuePeriodicSync(this, appWidgetId)
-
-        val resultIntent = Intent().apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-        }
-        setResult(RESULT_OK, resultIntent)
-        if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: setResult(RESULT_OK) widgetId=$appWidgetId")
-        finish()
     }
 }

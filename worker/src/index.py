@@ -39,12 +39,25 @@ async def on_fetch(request, env):
     code = url.searchParams.get("code")
     # state is a CSRF token verified by the Android app; encode it to prevent
     # query parameter injection if it contains '&' or '=' characters.
-    state = quote(url.searchParams.get("state") or "", safe="")
+    raw_state = url.searchParams.get("state")
+    state = quote(raw_state or "", safe="")
+
+    html_headers = {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, max-age=0",
+        "Pragma": "no-cache",
+    }
+
+    if not raw_state:
+        return js.Response.new(
+            build_deep_link_html(build_intent_url("error=missing_state")),
+            headers=html_headers,
+        )
 
     if not code:
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"error=missing_code&state={state}")),
-            headers={"Content-Type": "text/html; charset=utf-8"},
+            headers=html_headers,
         )
 
     try:
@@ -62,18 +75,18 @@ async def on_fetch(request, env):
         if not resp.ok:
             return js.Response.new(
                 build_deep_link_html(build_intent_url(f"error=token_exchange_failed&state={state}")),
-                headers={"Content-Type": "text/html; charset=utf-8"},
+                headers=html_headers,
             )
 
         data = await resp.json()
         token = quote(data.access_token, safe="")
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"token={token}&state={state}")),
-            headers={"Content-Type": "text/html; charset=utf-8"},
+            headers=html_headers,
         )
 
     except Exception:
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"error=network_error&state={state}")),
-            headers={"Content-Type": "text/html; charset=utf-8"},
+            headers=html_headers,
         )

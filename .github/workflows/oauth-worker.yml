@@ -1,10 +1,11 @@
-name: Worker CI
+name: OAuth Worker
 
 on:
   pull_request:
     branches: [main]
     paths:
       - worker/**
+      - .github/workflows/oauth-worker.yml
 
 jobs:
   test:

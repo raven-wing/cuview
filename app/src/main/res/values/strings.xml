@@ -17,7 +17,10 @@
     <string name="config_connect_button">Connect with ClickUp</string>
     <string name="config_connected_label">Connected ✓</string>
     <string name="config_disconnect_button">Disconnect</string>
-    <string name="config_preview_header">%d tasks</string>
+    <plurals name="config_preview_header">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
     <string name="config_preview_empty">No tasks in this view</string>
     <string name="config_preview_more">… and %d more</string>
     <string name="config_not_connected_message">Connect to ClickUp in the CU View app first.</string>

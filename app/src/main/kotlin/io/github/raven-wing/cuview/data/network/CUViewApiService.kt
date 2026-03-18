@@ -38,13 +38,14 @@ class CUViewApiService(
             .header("Authorization", token)
             .build()
         return try {
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) {
-                return Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+                }
+                val body = response.body?.string()
+                    ?: return Result.failure(Exception("Empty response body"))
+                Result.success(json.decodeFromString<T>(body))
             }
-            val body = response.body?.string()
-                ?: return Result.failure(Exception("Empty response body"))
-            Result.success(json.decodeFromString<T>(body))
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -90,8 +90,7 @@ class CUViewWidget : GlanceAppWidget() {
             // currentState() subscribes this composition to Glance's DataStore-backed widget
             // state. When updateAppWidgetState() changes this state (from a worker or the config
             // activity), Glance re-runs this lambda so all TaskStorage reads below are fresh.
-            @Suppress("UNUSED_VARIABLE")
-            val prefs = currentState<Preferences>()
+            currentState<Preferences>()
 
             val tasks = taskStorage.loadTasks()
             val error = taskStorage.loadError()

@@ -5,5 +5,5 @@ compatibility_flags = ["python_workers"]
 
 [vars]
 # The client ID is a public value — it appears in browser redirects and is safe to commit.
-CLICKUP_CLIENT_ID = "UG9XN0HCJERAC8HNQT835X51E71O9HAQ"
+CLICKUP_CLIENT_ID = "UG9XN0HCJERAC8HNQT835X51E71O9HAQ" # gitleaks:allow
 # CLICKUP_CLIENT_SECRET — set via: wrangler secret put CLICKUP_CLIENT_SECRET

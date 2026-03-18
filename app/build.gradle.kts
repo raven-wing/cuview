@@ -50,11 +50,7 @@ android {
                 keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
                     ?: localProps["keystore.key.password"] as String
             } else {
-                val debugKs = signingConfigs.getByName("debug")
-                storeFile = debugKs.storeFile
-                storePassword = debugKs.storePassword
-                keyAlias = debugKs.keyAlias
-                keyPassword = debugKs.keyPassword
+                error("Release signing not configured. Set SIGNING_KEYSTORE_PATH or keystore.path in local.properties.")
             }
         }
     }

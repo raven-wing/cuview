@@ -1,5 +1,0 @@
-# The ClickUp OAuth client ID is intentionally committed — it is a public value
-# that appears in browser redirects and carries no privilege on its own.
-# The client secret is managed via `wrangler secret put` and is never in source.
-[allowlist]
-  paths = ["worker/wrangler.toml"]

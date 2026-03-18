@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
@@ -191,6 +192,10 @@ internal fun ListSelectionLevel(
 
     when (viewsState) {
         is LoadState.Loading -> LoadingRow()
+        is LoadState.Failure -> {
+            Spacer(Modifier.height(4.dp))
+            Text(viewsState.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
         is LoadState.Success -> viewsState.data.forEach { view ->
             BrowseItem(
                 text = view.name,
@@ -205,7 +210,7 @@ internal fun ListSelectionLevel(
                 },
             )
         }
-        else -> Unit
+        null -> Unit
     }
 }
 
@@ -229,7 +234,7 @@ internal fun PreviewSection(selectedTarget: SelectedTarget?, previewState: Previ
         is PreviewState.Loading -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
         is PreviewState.Loaded -> {
             Text(
-                text = stringResource(R.string.config_preview_header, previewState.tasks.size),
+                text = pluralStringResource(R.plurals.config_preview_header, previewState.tasks.size, previewState.tasks.size),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -17,11 +17,6 @@
 # dependencies that are absent at runtime — suppress the R8 missing-class warnings.
 -dontwarn com.google.errorprone.annotations.**
 
-# OkHttp / Okio
--dontwarn okhttp3.**
--dontwarn okio.**
--keep class okhttp3.internal.publicsuffix.PublicSuffixDatabase { *; }
-
 # Glance AppWidget components (referenced from XML and instantiated by the launcher)
 -keep class * extends androidx.glance.appwidget.GlanceAppWidget { *; }
 -keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver { *; }

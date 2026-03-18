@@ -210,6 +210,7 @@ internal fun ConfigScreen(
                             selectedTarget = null
                         },
                         onViewClick = { view ->
+                            previewState = PreviewState.Loading
                             selectedTarget = SelectedTarget(
                                 id = view.id,
                                 label = buildBreadcrumb(level.space.name, view.name),
@@ -250,6 +251,7 @@ internal fun ConfigScreen(
                             selectedTarget = null
                         },
                         onViewClick = { view ->
+                            previewState = PreviewState.Loading
                             selectedTarget = SelectedTarget(
                                 id = view.id,
                                 label = buildBreadcrumb(level.space.name, level.folder.name, view.name),
@@ -282,7 +284,10 @@ internal fun ConfigScreen(
                             listViewsState = null
                             selectedTarget = null
                         },
-                        onTargetClick = { selectedTarget = it },
+                        onTargetClick = {
+                            previewState = PreviewState.Loading
+                            selectedTarget = it
+                        },
                     )
                 }
 
