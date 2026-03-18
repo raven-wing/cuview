@@ -35,7 +35,7 @@ android {
 
     signingConfigs {
         create("release") {
-            // Keystore resolution order: CI env vars → local.properties → debug keystore fallback.
+            // Keystore resolution order: CI env vars → local.properties.
             // CI: set SIGNING_KEYSTORE_PATH, SIGNING_KEYSTORE_PASSWORD, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD.
             // Local: add keystore.path / keystore.password / keystore.key.alias / keystore.key.password
             //        to local.properties.
@@ -49,8 +49,6 @@ android {
                     ?: localProps["keystore.key.alias"] as String
                 keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
                     ?: localProps["keystore.key.password"] as String
-            } else {
-                error("Release signing not configured. Set SIGNING_KEYSTORE_PATH or keystore.path in local.properties.")
             }
         }
     }
