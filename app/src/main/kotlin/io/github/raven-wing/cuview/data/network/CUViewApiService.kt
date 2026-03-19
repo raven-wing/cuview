@@ -87,6 +87,7 @@ class CUViewApiService(
         get<ListViewsResponse>("/list/$listId/view").map { extractListViews(it) }
 
     private fun extractListViews(response: ListViewsResponse): List<CUView> =
-        listOfNotNull(response.requiredViews?.list) +
-            response.views.filter { it.type == "list" }
+        (listOfNotNull(response.requiredViews?.list) +
+            response.views.filter { it.type == "list" })
+            .distinctBy { it.id }
 }

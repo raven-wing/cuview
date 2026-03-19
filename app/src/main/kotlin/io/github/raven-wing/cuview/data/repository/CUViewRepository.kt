@@ -11,6 +11,7 @@ import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.network.CUViewApiService
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -44,7 +45,7 @@ class CUViewRepository(
 
     /** Returns true if the widget has both an API token and a configured target. */
     fun isConfigured(widgetId: Int): Boolean =
-        securePreferences.apiToken != null && securePreferences.viewId(widgetId) != null
+        !securePreferences.apiToken.isNullOrBlank() && !securePreferences.viewId(widgetId).isNullOrBlank()
 
     companion object {
         /** Convenience overload for callers that only need to check without a subsequent sync. */
@@ -108,6 +109,8 @@ class CUViewRepository(
                     .firstOrNull()
                     ?: return@withContext Result.failure(Exception("No workspaces found"))
                 api.fetchSpaces(workspace.id)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -132,6 +135,8 @@ class CUViewRepository(
                         )
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -142,6 +147,8 @@ class CUViewRepository(
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.folderViews[folderId] ?: emptyList())
             try {
                 Result.success(newApiService(token).fetchFolderViews(folderId).getOrThrow())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -152,6 +159,8 @@ class CUViewRepository(
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.listViews[listId] ?: emptyList())
             try {
                 Result.success(newApiService(token).fetchListViews(listId).getOrThrow())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }

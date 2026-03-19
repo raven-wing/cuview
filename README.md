@@ -69,13 +69,9 @@ Uses Robolectric for tests that need Android context; plain JUnit for pure Kotli
 [Maestro](https://maestro.mobile.dev/) 1.40.0 must be installed at `~/.maestro/bin/maestro`.
 
 ```bash
-./e2e/run.sh [flow_name]   # defaults to 01_disconnect_reconnect
+make e2e        # build + install + run all flows (clears state between each)
+make e2e-fast   # run all flows without rebuilding or clearing state
 ```
-
-| Flag | Effect |
-|------|--------|
-| `SKIP_BUILD=1` | Skip Gradle build + ADB install |
-| `SKIP_CLEAR=1` | Keep stored token between runs |
 
 | Flow | Description |
 |------|-------------|
@@ -88,7 +84,7 @@ Uses Robolectric for tests that need Android context; plain JUnit for pure Kotli
 |----------|---------|--------------|
 | `pr.yml` | PR to `main` | Builds APK, runs unit tests |
 | `release.yml` | Push to `main` | Creates release PRs and GitHub releases via `release-please` |
-| `e2e.yml` | PR touching `app/` or `e2e/`, or manual | Boots API 34 emulator, runs all three Maestro flows with mock API |
+| `e2e.yml` | PR touching `app/` or `e2e/`, or manual | Boots API 34 emulator, runs both Maestro flows with mock API |
 
 ## Glance gotchas
 

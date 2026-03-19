@@ -4,9 +4,11 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 // Unit tests for the remaining CUViewApiService endpoints (everything except
 // fetchTasksByList, which is covered in CUViewApiServiceTest).
@@ -206,8 +208,9 @@ class CUViewApiServiceFetchTest {
 
         service.fetchTasks("view-1")
 
-        val request = mockServer.takeRequest()
-        assertEquals("Bearer test-token", request.getHeader("Authorization"))
+        val request = mockServer.takeRequest(5, TimeUnit.SECONDS)
+        assertNotNull("Expected outbound request", request)
+        assertEquals("Bearer test-token", request!!.getHeader("Authorization"))
     }
 
     @Test
@@ -216,7 +219,8 @@ class CUViewApiServiceFetchTest {
 
         service.fetchWorkspaces()
 
-        val request = mockServer.takeRequest()
-        assertEquals("Bearer test-token", request.getHeader("Authorization"))
+        val request = mockServer.takeRequest(5, TimeUnit.SECONDS)
+        assertNotNull("Expected outbound request", request)
+        assertEquals("Bearer test-token", request!!.getHeader("Authorization"))
     }
 }
