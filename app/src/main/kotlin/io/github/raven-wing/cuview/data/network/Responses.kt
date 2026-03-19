@@ -31,10 +31,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable internal data class ListViewsResponse(
     @SerialName("views") val views: List<CUView> = emptyList(),
-    @SerialName("required_views") val requiredViews: RequiredViews? = null,
+    // required_views is an object keyed by view type; we only care about the built-in list view.
+    @SerialName("required_views") val requiredViews: RequiredListView? = null,
 )
 
-// required_views is an object keyed by view type, each value is a view or null
-@Serializable internal data class RequiredViews(
+// Wrapper for the required_views JSON object — only the "list" key is used.
+@Serializable internal data class RequiredListView(
     @SerialName("list") val list: CUView? = null,
 )
