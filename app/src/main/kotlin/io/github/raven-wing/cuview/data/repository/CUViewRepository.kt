@@ -39,7 +39,7 @@ data class SpaceContents(
 class CUViewRepository(
     private val context: Context,
     private val securePreferences: SecurePreferences = SecurePreferences(context),
-    private val apiService: CUViewApiService = CUViewApiService(),
+    private val newApiService: (token: String) -> CUViewApiService = ::CUViewApiService,
 ) {
 
     /** Returns true if the widget has both an API token and a configured target. */
@@ -69,11 +69,12 @@ class CUViewRepository(
             return Result.success(Unit)
         }
 
+        val api = newApiService(token)
         val taskStorage = TaskStorage(context, widgetId)
         val result = if (securePreferences.isListTarget(widgetId)) {
-            apiService.fetchTasksByList(targetId, token)
+            api.fetchTasksByList(targetId)
         } else {
-            apiService.fetchTasks(targetId, token)
+            api.fetchTasks(targetId)
         }
         return result.fold(
             onSuccess = { tasks ->
@@ -91,24 +92,22 @@ class CUViewRepository(
     suspend fun previewTasks(targetId: String, isListTarget: Boolean, token: String): Result<List<CUTask>> =
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.tasksForTarget(targetId, isListTarget))
-            if (isListTarget) {
-                apiService.fetchTasksByList(targetId, token)
-            } else {
-                apiService.fetchTasks(targetId, token)
-            }
+            val api = newApiService(token)
+            if (isListTarget) api.fetchTasksByList(targetId) else api.fetchTasks(targetId)
         }
 
     suspend fun fetchSpaces(token: String): Result<List<CUSpace>> =
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.spaces)
             try {
+                val api = newApiService(token)
                 // NOTE: Only the first workspace is used. Users with multiple workspaces
                 // will only see spaces from their first workspace.
-                val workspace = apiService.fetchWorkspaces(token)
+                val workspace = api.fetchWorkspaces()
                     .getOrThrow()
                     .firstOrNull()
                     ?: return@withContext Result.failure(Exception("No workspaces found"))
-                apiService.fetchSpaces(workspace.id, token)
+                api.fetchSpaces(workspace.id)
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -120,10 +119,11 @@ class CUViewRepository(
                 FakeData.spaceContents[spaceId] ?: SpaceContents(emptyList(), emptyList(), emptyList())
             )
             try {
+                val api = newApiService(token)
                 coroutineScope {
-                    val viewsDeferred = async { apiService.fetchSpaceViews(spaceId, token).getOrThrow() }
-                    val foldersDeferred = async { apiService.fetchFolders(spaceId, token).getOrThrow() }
-                    val listsDeferred = async { apiService.fetchFolderlessLists(spaceId, token).getOrThrow() }
+                    val viewsDeferred = async { api.fetchSpaceViews(spaceId).getOrThrow() }
+                    val foldersDeferred = async { api.fetchFolders(spaceId).getOrThrow() }
+                    val listsDeferred = async { api.fetchFolderlessLists(spaceId).getOrThrow() }
                     Result.success(
                         SpaceContents(
                             spaceViews = viewsDeferred.await(),
@@ -141,7 +141,7 @@ class CUViewRepository(
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.folderViews[folderId] ?: emptyList())
             try {
-                Result.success(apiService.fetchFolderViews(folderId, token).getOrThrow())
+                Result.success(newApiService(token).fetchFolderViews(folderId).getOrThrow())
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -151,7 +151,7 @@ class CUViewRepository(
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.listViews[listId] ?: emptyList())
             try {
-                Result.success(apiService.fetchListViews(listId, token).getOrThrow())
+                Result.success(newApiService(token).fetchListViews(listId).getOrThrow())
             } catch (e: Exception) {
                 Result.failure(e)
             }

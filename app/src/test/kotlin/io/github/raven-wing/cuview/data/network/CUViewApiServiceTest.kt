@@ -16,7 +16,7 @@ class CUViewApiServiceTest {
     @Before
     fun setUp() {
         mockServer.start()
-        service = CUViewApiService(baseUrl = "http://${mockServer.hostName}:${mockServer.port}")
+        service = CUViewApiService(token = "test-token", baseUrl = "http://${mockServer.hostName}:${mockServer.port}")
     }
 
     @After
@@ -44,7 +44,7 @@ class CUViewApiServiceTest {
             ),
         )
 
-        val tasks = service.fetchTasksByList("list-A", "token").getOrThrow()
+        val tasks = service.fetchTasksByList("list-A").getOrThrow()
 
         assertEquals(2, tasks.size)
         assertEquals("t1", tasks[0].id)
@@ -66,7 +66,7 @@ class CUViewApiServiceTest {
             ),
         )
 
-        val tasks = service.fetchTasksByList("list-A", "token").getOrThrow()
+        val tasks = service.fetchTasksByList("list-A").getOrThrow()
 
         assertEquals(1, tasks.size)
         assertEquals("t1", tasks[0].id)
@@ -80,7 +80,7 @@ class CUViewApiServiceTest {
             ),
         )
 
-        val tasks = service.fetchTasksByList("list-A", "token").getOrThrow()
+        val tasks = service.fetchTasksByList("list-A").getOrThrow()
 
         assertTrue(tasks.isEmpty())
     }
@@ -89,7 +89,7 @@ class CUViewApiServiceTest {
     fun fetchTasksByList_returnsFailureOnHttpError() {
         mockServer.enqueue(MockResponse().setResponseCode(401))
 
-        val result = service.fetchTasksByList("list-A", "bad-token")
+        val result = service.fetchTasksByList("list-A")
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()!!.message!!.contains("401"))

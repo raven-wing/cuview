@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit
  * [baseUrl] is overridable in tests to point at a [okhttp3.mockwebserver.MockWebServer].
  */
 class CUViewApiService(
+    val token: String,
     private val baseUrl: String = "https://api.clickup.com/api/v2",
 ) {
 
@@ -27,15 +28,19 @@ class CUViewApiService(
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(15, TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            chain.proceed(
+                chain.request().newBuilder()
+                    .header("Authorization", "Bearer $token")
+                    .build()
+            )
+        }
         .build()
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    private inline fun <reified T> get(url: String, token: String): Result<T> {
-        val request = Request.Builder()
-            .url(url)
-            .header("Authorization", "Bearer $token")
-            .build()
+    private inline fun <reified T> get(path: String): Result<T> {
+        val request = Request.Builder().url("$baseUrl$path").build()
         return try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
@@ -50,39 +55,38 @@ class CUViewApiService(
         }
     }
 
-    fun fetchTasks(viewId: String, token: String): Result<List<CUTask>> =
-        get<ViewTasksResponse>("$baseUrl/view/$viewId/task", token).map { it.tasks }
+    fun fetchTasks(viewId: String): Result<List<CUTask>> =
+        get<ViewTasksResponse>("/view/$viewId/task").map { it.tasks }
 
-    fun fetchTasksByList(listId: String, token: String): Result<List<CUTask>> =
-        get<ViewTasksResponse>("$baseUrl/list/$listId/task", token).map { response ->
+    fun fetchTasksByList(listId: String): Result<List<CUTask>> =
+        get<ViewTasksResponse>("/list/$listId/task").map { response ->
             // ClickUp multi-list: tasks linked from other lists share this list's view but
             // carry their owning list in task.list.id — keep only native tasks.
             response.tasks.filter { it.list?.id == listId }
         }
 
-    fun fetchWorkspaces(token: String): Result<List<CUWorkspace>> =
-        get<WorkspacesResponse>("$baseUrl/team", token).map { it.teams }
+    fun fetchWorkspaces(): Result<List<CUWorkspace>> =
+        get<WorkspacesResponse>("/team").map { it.teams }
 
-    fun fetchSpaces(workspaceId: String, token: String): Result<List<CUSpace>> =
-        get<SpacesResponse>("$baseUrl/team/$workspaceId/space", token).map { it.spaces }
+    fun fetchSpaces(workspaceId: String): Result<List<CUSpace>> =
+        get<SpacesResponse>("/team/$workspaceId/space").map { it.spaces }
 
-    fun fetchFolders(spaceId: String, token: String): Result<List<CUFolder>> =
-        get<FoldersResponse>("$baseUrl/space/$spaceId/folder", token).map { it.folders }
+    fun fetchFolders(spaceId: String): Result<List<CUFolder>> =
+        get<FoldersResponse>("/space/$spaceId/folder").map { it.folders }
 
-    fun fetchFolderlessLists(spaceId: String, token: String): Result<List<CUList>> =
-        get<ListsResponse>("$baseUrl/space/$spaceId/list", token).map { it.lists }
+    fun fetchFolderlessLists(spaceId: String): Result<List<CUList>> =
+        get<ListsResponse>("/space/$spaceId/list").map { it.lists }
 
-    fun fetchSpaceViews(spaceId: String, token: String): Result<List<CUView>> =
-        get<ListViewsResponse>("$baseUrl/space/$spaceId/view", token).map { extractListViews(it) }
+    fun fetchSpaceViews(spaceId: String): Result<List<CUView>> =
+        get<ListViewsResponse>("/space/$spaceId/view").map { extractListViews(it) }
 
-    fun fetchFolderViews(folderId: String, token: String): Result<List<CUView>> =
-        get<ListViewsResponse>("$baseUrl/folder/$folderId/view", token).map { extractListViews(it) }
+    fun fetchFolderViews(folderId: String): Result<List<CUView>> =
+        get<ListViewsResponse>("/folder/$folderId/view").map { extractListViews(it) }
 
-    fun fetchListViews(listId: String, token: String): Result<List<CUView>> =
-        get<ListViewsResponse>("$baseUrl/list/$listId/view", token).map { extractListViews(it) }
+    fun fetchListViews(listId: String): Result<List<CUView>> =
+        get<ListViewsResponse>("/list/$listId/view").map { extractListViews(it) }
 
     private fun extractListViews(response: ListViewsResponse): List<CUView> =
         listOfNotNull(response.requiredViews?.list) +
             response.views.filter { it.type == "list" }
-
 }

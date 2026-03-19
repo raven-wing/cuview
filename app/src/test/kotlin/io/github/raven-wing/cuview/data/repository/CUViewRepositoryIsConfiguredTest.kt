@@ -1,7 +1,6 @@
 package io.github.raven_wing.cuview.data.repository
 
 import android.content.Context
-import io.github.raven_wing.cuview.data.network.CUViewApiService
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -38,7 +37,6 @@ class CUViewRepositoryIsConfiguredTest {
         repository = CUViewRepository(
             context = RuntimeEnvironment.getApplication(),
             securePreferences = securePrefs,
-            apiService = CUViewApiService(),
         )
     }
 

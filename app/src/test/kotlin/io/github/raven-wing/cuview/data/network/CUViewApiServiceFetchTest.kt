@@ -18,7 +18,7 @@ class CUViewApiServiceFetchTest {
     @Before
     fun setUp() {
         mockServer.start()
-        service = CUViewApiService(baseUrl = "http://${mockServer.hostName}:${mockServer.port}")
+        service = CUViewApiService(token = "test-token", baseUrl = "http://${mockServer.hostName}:${mockServer.port}")
     }
 
     @After
@@ -36,7 +36,7 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val tasks = service.fetchTasks("view-1", "token").getOrThrow()
+        val tasks = service.fetchTasks("view-1").getOrThrow()
 
         assertEquals(2, tasks.size)
         assertEquals("t1", tasks[0].id)
@@ -47,7 +47,7 @@ class CUViewApiServiceFetchTest {
     fun fetchTasks_returnsFailureOnHttpError() {
         mockServer.enqueue(MockResponse().setResponseCode(403))
 
-        val result = service.fetchTasks("view-1", "bad-token")
+        val result = service.fetchTasks("view-1")
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()!!.message!!.contains("403"))
@@ -63,7 +63,7 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val workspaces = service.fetchWorkspaces("token").getOrThrow()
+        val workspaces = service.fetchWorkspaces().getOrThrow()
 
         assertEquals(2, workspaces.size)
         assertEquals("ws1", workspaces[0].id)
@@ -74,7 +74,7 @@ class CUViewApiServiceFetchTest {
     fun fetchWorkspaces_parsesEmptyTeamList() {
         mockServer.enqueue(MockResponse().setBody("""{"teams": []}"""))
 
-        assertTrue(service.fetchWorkspaces("token").getOrThrow().isEmpty())
+        assertTrue(service.fetchWorkspaces().getOrThrow().isEmpty())
     }
 
     // ── fetchSpaces ───────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val spaces = service.fetchSpaces("ws1", "token").getOrThrow()
+        val spaces = service.fetchSpaces("ws1").getOrThrow()
 
         assertEquals(2, spaces.size)
         assertEquals("sp1", spaces[0].id)
@@ -116,7 +116,7 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val folders = service.fetchFolders("sp1", "token").getOrThrow()
+        val folders = service.fetchFolders("sp1").getOrThrow()
 
         assertEquals(1, folders.size)
         val folder = folders[0]
@@ -131,7 +131,7 @@ class CUViewApiServiceFetchTest {
     fun fetchFolders_parsesEmptyFolderList() {
         mockServer.enqueue(MockResponse().setBody("""{"folders": []}"""))
 
-        assertTrue(service.fetchFolders("sp1", "token").getOrThrow().isEmpty())
+        assertTrue(service.fetchFolders("sp1").getOrThrow().isEmpty())
     }
 
     // ── fetchFolderlessLists ──────────────────────────────────────────────────
@@ -144,7 +144,7 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val lists = service.fetchFolderlessLists("sp1", "token").getOrThrow()
+        val lists = service.fetchFolderlessLists("sp1").getOrThrow()
 
         assertEquals(2, lists.size)
         assertEquals("l1", lists[0].id)
@@ -169,7 +169,7 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val views = service.fetchSpaceViews("sp1", "token").getOrThrow()
+        val views = service.fetchSpaceViews("sp1").getOrThrow()
 
         // Only the required list view — board and gantt are filtered out
         assertEquals(1, views.size)
@@ -185,7 +185,7 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val views = service.fetchFolderViews("f1", "token").getOrThrow()
+        val views = service.fetchFolderViews("f1").getOrThrow()
 
         assertEquals(1, views.size)
         assertEquals("v1", views[0].id)
@@ -195,7 +195,7 @@ class CUViewApiServiceFetchTest {
     fun fetchListViews_parsesEmptyViews() {
         mockServer.enqueue(MockResponse().setBody("""{"views": []}"""))
 
-        assertTrue(service.fetchListViews("l1", "token").getOrThrow().isEmpty())
+        assertTrue(service.fetchListViews("l1").getOrThrow().isEmpty())
     }
 
     // ── Authorization header ──────────────────────────────────────────────────
@@ -204,19 +204,19 @@ class CUViewApiServiceFetchTest {
     fun fetchTasks_sendsAuthorizationHeader() {
         mockServer.enqueue(MockResponse().setBody("""{"tasks": []}"""))
 
-        service.fetchTasks("view-1", "pk_my_secret_token")
+        service.fetchTasks("view-1")
 
         val request = mockServer.takeRequest()
-        assertEquals("Bearer pk_my_secret_token", request.getHeader("Authorization"))
+        assertEquals("Bearer test-token", request.getHeader("Authorization"))
     }
 
     @Test
     fun fetchWorkspaces_sendsAuthorizationHeader() {
         mockServer.enqueue(MockResponse().setBody("""{"teams": []}"""))
 
-        service.fetchWorkspaces("pk_another_token")
+        service.fetchWorkspaces()
 
         val request = mockServer.takeRequest()
-        assertEquals("Bearer pk_another_token", request.getHeader("Authorization"))
+        assertEquals("Bearer test-token", request.getHeader("Authorization"))
     }
 }

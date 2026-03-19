@@ -36,7 +36,7 @@ class CUViewRepositoryFolderViewsTest {
         repository = CUViewRepository(
             context = RuntimeEnvironment.getApplication(),
             securePreferences = SecurePreferences(prefs),
-            apiService = CUViewApiService(baseUrl = "http://${mockServer.hostName}:${mockServer.port}"),
+            newApiService = { token -> CUViewApiService(token = token, baseUrl = "http://${mockServer.hostName}:${mockServer.port}") },
         )
     }
 
