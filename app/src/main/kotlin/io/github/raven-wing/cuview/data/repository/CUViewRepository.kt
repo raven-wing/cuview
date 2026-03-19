@@ -5,10 +5,10 @@ import android.util.Log
 import io.github.raven_wing.cuview.BuildConfig
 import io.github.raven_wing.cuview.data.model.CUList
 import io.github.raven_wing.cuview.data.model.CUView
-import io.github.raven_wing.cuview.data.model.Folder
+import io.github.raven_wing.cuview.data.model.CUFolder
+import io.github.raven_wing.cuview.data.model.CUSpace
+import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.ListViewsResponse
-import io.github.raven_wing.cuview.data.model.Space
-import io.github.raven_wing.cuview.data.model.Task
 import io.github.raven_wing.cuview.data.network.CUViewApiService
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
 /** Views, folders, and folderless lists belonging to a single ClickUp space. */
 data class SpaceContents(
     val spaceViews: List<CUView>,
-    val folders: List<Folder>,
+    val folders: List<CUFolder>,
     val folderlessLists: List<CUList>,
 )
 
@@ -89,7 +89,7 @@ class CUViewRepository(
         )
     }
 
-    suspend fun previewTasks(targetId: String, isListTarget: Boolean, token: String): Result<List<Task>> =
+    suspend fun previewTasks(targetId: String, isListTarget: Boolean, token: String): Result<List<CUTask>> =
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.tasksForTarget(targetId, isListTarget))
             if (isListTarget) {
@@ -99,7 +99,7 @@ class CUViewRepository(
             }
         }
 
-    suspend fun fetchSpaces(token: String): Result<List<Space>> =
+    suspend fun fetchSpaces(token: String): Result<List<CUSpace>> =
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.spaces)
             try {

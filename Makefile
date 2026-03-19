@@ -4,7 +4,7 @@ APK         := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
 MAESTRO     := $(HOME)/.maestro/bin/maestro
 
-.PHONY: build install build-release install-release test lint e2e e2e-all e2e-smoke e2e-reconnect e2e-fast help
+.PHONY: build install build-release install-release test test-android test-worker lint e2e e2e-all e2e-smoke e2e-reconnect e2e-fast help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -25,8 +25,13 @@ install-release: build-release ## Build and install release APK on connected dev
 
 # ── test ───────────────────────────────────────────────────────────────────────
 
-test: ## Run unit tests
+test: test-android test-worker ## Run all unit tests (Android + worker)
+
+test-android: ## Run Android unit tests
 	./gradlew :app:test
+
+test-worker: ## Run OAuth worker tests
+	cd worker && uv run python -m pytest tests/ -v
 
 lint: ## Run lint checks
 	./gradlew :app:lintDebug :lint-rules:test

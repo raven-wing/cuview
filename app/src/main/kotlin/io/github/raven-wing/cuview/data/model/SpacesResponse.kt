@@ -5,11 +5,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SpacesResponse(
-    @SerialName("spaces") val spaces: List<Space>,
+    @SerialName("spaces") val spaces: List<CUSpace>,
 )
 
 @Serializable
-data class Space(
+data class CUSpace(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
 )

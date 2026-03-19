@@ -39,7 +39,7 @@ import androidx.glance.text.FontStyle
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import io.github.raven_wing.cuview.data.model.Task
+import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 
 /**
@@ -106,7 +106,7 @@ class CUViewWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun WidgetContent(tasks: List<Task>, error: String?, isSyncing: Boolean, targetName: String?, colors: WidgetColors) {
+    private fun WidgetContent(tasks: List<CUTask>, error: String?, isSyncing: Boolean, targetName: String?, colors: WidgetColors) {
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -123,7 +123,7 @@ class CUViewWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun TaskListState(tasks: List<Task>, error: String?, targetName: String?, colors: WidgetColors) {
+    private fun TaskListState(tasks: List<CUTask>, error: String?, targetName: String?, colors: WidgetColors) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
             Header(colors)
             if (targetName != null) {
@@ -200,7 +200,7 @@ class CUViewWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun TaskTile(task: Task, colors: WidgetColors) {
+    private fun TaskTile(task: CUTask, colors: WidgetColors) {
         val uri = Uri.Builder()
             .scheme("https")
             .authority("app.clickup.com")

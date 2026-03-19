@@ -18,7 +18,7 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
 import io.github.raven_wing.cuview.BuildConfig
-import io.github.raven_wing.cuview.data.model.Task
+import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.repository.CUViewRepository
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
@@ -107,7 +107,7 @@ class WidgetConfigActivity : ComponentActivity() {
         targetId: String,
         isListTarget: Boolean,
         targetLabel: String,
-        previewTasks: List<Task>,
+        previewTasks: List<CUTask>,
         theme: WidgetTheme,
     ) {
         if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: widgetId=$appWidgetId tasks=${previewTasks.size} theme=${theme.id}")

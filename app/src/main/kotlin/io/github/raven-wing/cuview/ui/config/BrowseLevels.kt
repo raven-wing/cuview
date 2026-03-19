@@ -18,20 +18,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import io.github.raven_wing.cuview.R
+import io.github.raven_wing.cuview.data.model.CUFolder
 import io.github.raven_wing.cuview.data.model.CUList
+import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUView
-import io.github.raven_wing.cuview.data.model.Folder
-import io.github.raven_wing.cuview.data.model.Space
-import io.github.raven_wing.cuview.data.model.Task
 import io.github.raven_wing.cuview.data.repository.SpaceContents
 
 // ── Level 1: space list ───────────────────────────────────────────────────────
 
 @Composable
 internal fun SpaceListLevel(
-    spacesState: LoadState<List<Space>>?,
+    spacesState: LoadState<List<CUSpace>>?,
     onBrowse: () -> Unit,
-    onSpaceClick: (Space) -> Unit,
+    onSpaceClick: (CUSpace) -> Unit,
 ) {
     Button(
         onClick = onBrowse,
@@ -63,12 +62,12 @@ internal fun SpaceListLevel(
 
 @Composable
 internal fun SpaceContentsLevel(
-    space: Space,
+    space: CUSpace,
     contentsState: LoadState<SpaceContents>?,
     selectedTarget: SelectedTarget?,
     onBack: () -> Unit,
     onViewClick: (CUView) -> Unit,
-    onFolderClick: (Folder) -> Unit,
+    onFolderClick: (CUFolder) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
     BackRow(label = "Spaces", onBack = onBack)
@@ -116,8 +115,8 @@ internal fun SpaceContentsLevel(
 
 @Composable
 internal fun FolderContentsLevel(
-    space: Space,
-    folder: Folder,
+    space: CUSpace,
+    folder: CUFolder,
     viewsState: LoadState<List<CUView>>?,
     selectedTarget: SelectedTarget?,
     onBack: () -> Unit,
@@ -161,8 +160,8 @@ internal fun FolderContentsLevel(
 
 @Composable
 internal fun ListSelectionLevel(
-    space: Space,
-    folder: Folder?,
+    space: CUSpace,
+    folder: CUFolder?,
     list: CUList,
     viewsState: LoadState<List<CUView>>?,
     selectedTarget: SelectedTarget?,

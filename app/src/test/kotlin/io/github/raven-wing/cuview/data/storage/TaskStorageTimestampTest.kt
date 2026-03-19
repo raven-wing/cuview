@@ -1,7 +1,7 @@
 package io.github.raven_wing.cuview.data.storage
 
 import android.content.Context
-import io.github.raven_wing.cuview.data.model.Task
+import io.github.raven_wing.cuview.data.model.CUTask
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,7 +31,7 @@ class TaskStorageTimestampTest {
         val s = storage(2)
         val before = System.currentTimeMillis()
 
-        s.saveTasks(listOf(Task("t1", "Task")))
+        s.saveTasks(listOf(CUTask("t1", "Task")))
 
         val ts = s.loadLastUpdatedMs()
         assertTrue("timestamp should be >= before save", ts >= before)
@@ -41,7 +41,7 @@ class TaskStorageTimestampTest {
     @Test
     fun clear_resetsLastUpdatedMsToZero() {
         val s = storage(3)
-        s.saveTasks(listOf(Task("t1", "Task")))
+        s.saveTasks(listOf(CUTask("t1", "Task")))
 
         s.clear()
 
@@ -54,7 +54,7 @@ class TaskStorageTimestampTest {
         val s1 = storage(4)
         val s2 = storage(5)
 
-        s1.saveTasks(listOf(Task("t1", "Task")))
+        s1.saveTasks(listOf(CUTask("t1", "Task")))
 
         assertTrue(s1.loadLastUpdatedMs() > 0)
         assertEquals(0L, s2.loadLastUpdatedMs())

@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ViewTasksResponse(
-    @SerialName("tasks") val tasks: List<Task>,
+    @SerialName("tasks") val tasks: List<CUTask>,
 )

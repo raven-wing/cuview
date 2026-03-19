@@ -4,7 +4,7 @@ import io.github.raven_wing.cuview.data.model.FoldersResponse
 import io.github.raven_wing.cuview.data.model.ListViewsResponse
 import io.github.raven_wing.cuview.data.model.ListsResponse
 import io.github.raven_wing.cuview.data.model.SpacesResponse
-import io.github.raven_wing.cuview.data.model.Task
+import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.ViewTasksResponse
 import io.github.raven_wing.cuview.data.model.WorkspacesResponse
 import kotlinx.serialization.json.Json
@@ -51,7 +51,7 @@ class CUViewApiService(
         }
     }
 
-    fun fetchTasks(viewId: String, token: String): Result<List<Task>> =
+    fun fetchTasks(viewId: String, token: String): Result<List<CUTask>> =
         get<ViewTasksResponse>("$baseUrl/view/$viewId/task", token).map { it.tasks }
 
     fun fetchWorkspaces(token: String): Result<WorkspacesResponse> =
@@ -75,7 +75,7 @@ class CUViewApiService(
     fun fetchListViews(listId: String, token: String): Result<ListViewsResponse> =
         get("$baseUrl/list/$listId/view", token)
 
-    fun fetchTasksByList(listId: String, token: String): Result<List<Task>> =
+    fun fetchTasksByList(listId: String, token: String): Result<List<CUTask>> =
         get<ViewTasksResponse>("$baseUrl/list/$listId/task", token).map { response ->
             // ClickUp multi-list: tasks linked from other lists share this list's view but
             // carry their owning list in task.list.id — keep only native tasks.

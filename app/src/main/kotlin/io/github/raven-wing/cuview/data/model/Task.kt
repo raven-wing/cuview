@@ -9,7 +9,7 @@ data class TaskListRef(
 )
 
 @Serializable
-data class Task(
+data class CUTask(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
     @SerialName("list") val list: TaskListRef? = null,

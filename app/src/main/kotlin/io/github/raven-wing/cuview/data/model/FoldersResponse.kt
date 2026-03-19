@@ -5,11 +5,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FoldersResponse(
-    @SerialName("folders") val folders: List<Folder>,
+    @SerialName("folders") val folders: List<CUFolder>,
 )
 
 @Serializable
-data class Folder(
+data class CUFolder(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
     @SerialName("lists") val lists: List<CUList>,

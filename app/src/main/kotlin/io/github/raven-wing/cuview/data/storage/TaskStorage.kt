@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import io.github.raven_wing.cuview.data.model.Task
+import io.github.raven_wing.cuview.data.model.CUTask
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -54,14 +54,14 @@ class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widget
     private val keyTargetName = "target_name_$widgetId"
     private val keyThemeId = "theme_id_$widgetId"
 
-    fun saveTasks(tasks: List<Task>) {
+    fun saveTasks(tasks: List<CUTask>) {
         prefs.edit()
             .putString(keyTasksJson, Json.encodeToString(tasks))
             .putLong(keyLastUpdatedMs, System.currentTimeMillis())
             .apply()
     }
 
-    fun loadTasks(): List<Task> {
+    fun loadTasks(): List<CUTask> {
         val json = prefs.getString(keyTasksJson, null) ?: return emptyList()
         return try {
             Json.decodeFromString(json)

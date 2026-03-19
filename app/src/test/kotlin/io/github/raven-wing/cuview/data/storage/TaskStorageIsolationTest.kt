@@ -1,7 +1,7 @@
 package io.github.raven_wing.cuview.data.storage
 
 import android.content.Context
-import io.github.raven_wing.cuview.data.model.Task
+import io.github.raven_wing.cuview.data.model.CUTask
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -30,10 +30,10 @@ class TaskStorageIsolationTest {
         val storage1 = storage(1)
         val storage2 = storage(2)
 
-        storage1.saveTasks(listOf(Task("t1", "Widget 1 task")))
-        storage2.saveTasks(listOf(Task("t2", "Widget 2 task A"), Task("t3", "Widget 2 task B")))
+        storage1.saveTasks(listOf(CUTask("t1", "Widget 1 task")))
+        storage2.saveTasks(listOf(CUTask("t2", "Widget 2 task A"), CUTask("t3", "Widget 2 task B")))
 
-        assertEquals(listOf(Task("t1", "Widget 1 task")), storage1.loadTasks())
+        assertEquals(listOf(CUTask("t1", "Widget 1 task")), storage1.loadTasks())
         assertEquals(2, storage2.loadTasks().size)
         assertEquals("t2", storage2.loadTasks()[0].id)
         assertEquals("t3", storage2.loadTasks()[1].id)
@@ -66,13 +66,13 @@ class TaskStorageIsolationTest {
         val storage1 = storage(1)
         val storage2 = storage(2)
 
-        storage1.saveTasks(listOf(Task("t1", "Widget 1 task")))
-        storage2.saveTasks(listOf(Task("t2", "Widget 2 task")))
+        storage1.saveTasks(listOf(CUTask("t1", "Widget 1 task")))
+        storage2.saveTasks(listOf(CUTask("t2", "Widget 2 task")))
 
         storage1.clear()
 
         assertTrue(storage1.loadTasks().isEmpty())
-        assertEquals(listOf(Task("t2", "Widget 2 task")), storage2.loadTasks())
+        assertEquals(listOf(CUTask("t2", "Widget 2 task")), storage2.loadTasks())
     }
 
     // Bug A regression: a fresh TaskStorage must not report isSyncing=true. Before the fix,
@@ -107,7 +107,7 @@ class TaskStorageIsolationTest {
     fun clear_removesAllFields_includingSyncingAndTargetName() {
         val storage = storage(1)
 
-        storage.saveTasks(listOf(Task("t1", "Task One")))
+        storage.saveTasks(listOf(CUTask("t1", "Task One")))
         storage.saveError("Something went wrong")
         storage.setSyncing(true)
         storage.saveTargetName("My List")

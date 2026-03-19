@@ -26,11 +26,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.raven_wing.cuview.R
+import io.github.raven_wing.cuview.data.model.CUFolder
 import io.github.raven_wing.cuview.data.model.CUList
+import io.github.raven_wing.cuview.data.model.CUSpace
+import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.CUView
-import io.github.raven_wing.cuview.data.model.Folder
-import io.github.raven_wing.cuview.data.model.Space
-import io.github.raven_wing.cuview.data.model.Task
 import io.github.raven_wing.cuview.data.repository.SpaceContents
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.ui.main.MainActivity
@@ -43,20 +43,20 @@ import kotlinx.coroutines.withContext
 
 /** Wraps all repository calls needed by the config screen, keeping [ConfigScreen]'s parameter list flat. */
 internal data class RepositoryCallbacks(
-    val fetchSpaces: suspend (token: String) -> Result<List<Space>>,
+    val fetchSpaces: suspend (token: String) -> Result<List<CUSpace>>,
     val fetchSpaceContents: suspend (spaceId: String, token: String) -> Result<SpaceContents>,
     val fetchFolderViews: suspend (folderId: String, token: String) -> Result<List<CUView>>,
     val fetchListViews: suspend (listId: String, token: String) -> Result<List<CUView>>,
-    val previewTarget: suspend (targetId: String, isListTarget: Boolean, token: String) -> Result<List<Task>>,
+    val previewTarget: suspend (targetId: String, isListTarget: Boolean, token: String) -> Result<List<CUTask>>,
 )
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 
 internal sealed class NavLevel {
     data object Root : NavLevel()
-    data class SpaceContents(val space: Space) : NavLevel()
-    data class FolderContents(val space: Space, val folder: Folder) : NavLevel()
-    data class ListSelection(val space: Space, val folder: Folder?, val list: CUList) : NavLevel()
+    data class SpaceContents(val space: CUSpace) : NavLevel()
+    data class FolderContents(val space: CUSpace, val folder: CUFolder) : NavLevel()
+    data class ListSelection(val space: CUSpace, val folder: CUFolder?, val list: CUList) : NavLevel()
 }
 
 // ── Async loading state ───────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ internal data class SelectedTarget(val id: String, val label: String, val isList
 internal sealed class PreviewState {
     data object Idle : PreviewState()
     data object Loading : PreviewState()
-    data class Loaded(val tasks: List<Task>) : PreviewState()
+    data class Loaded(val tasks: List<CUTask>) : PreviewState()
     data class Error(val message: String) : PreviewState()
 }
 
@@ -91,8 +91,8 @@ internal fun ConfigScreen(
     tokenCheckSignal: Int,
     initialThemeId: String?,
     initialTarget: SelectedTarget? = null,
-    initialTasks: List<Task>? = null,
-    onSave: (targetId: String, isListTarget: Boolean, targetLabel: String, previewTasks: List<Task>, theme: WidgetTheme) -> Unit,
+    initialTasks: List<CUTask>? = null,
+    onSave: (targetId: String, isListTarget: Boolean, targetLabel: String, previewTasks: List<CUTask>, theme: WidgetTheme) -> Unit,
     callbacks: RepositoryCallbacks,
 ) {
     val context = LocalContext.current
@@ -108,7 +108,7 @@ internal fun ConfigScreen(
     }
 
     var navLevel by remember { mutableStateOf<NavLevel>(NavLevel.Root) }
-    var spacesState by remember { mutableStateOf<LoadState<List<Space>>?>(null) }
+    var spacesState by remember { mutableStateOf<LoadState<List<CUSpace>>?>(null) }
     var spaceContentsState by remember { mutableStateOf<LoadState<SpaceContents>?>(null) }
     var folderViewsState by remember { mutableStateOf<LoadState<List<CUView>>?>(null) }
     var listViewsState by remember { mutableStateOf<LoadState<List<CUView>>?>(null) }

@@ -2,9 +2,9 @@ package io.github.raven_wing.cuview.data.repository
 
 import io.github.raven_wing.cuview.data.model.CUList
 import io.github.raven_wing.cuview.data.model.CUView
-import io.github.raven_wing.cuview.data.model.Folder
-import io.github.raven_wing.cuview.data.model.Space
-import io.github.raven_wing.cuview.data.model.Task
+import io.github.raven_wing.cuview.data.model.CUFolder
+import io.github.raven_wing.cuview.data.model.CUSpace
+import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.TaskListRef
 
 internal object FakeData {
@@ -12,8 +12,8 @@ internal object FakeData {
     // ── Spaces ────────────────────────────────────────────────────────────────
 
     val spaces = listOf(
-        Space("mock_space_mammals", "Mammals"),
-        Space("mock_space_birds", "Birds"),
+        CUSpace("mock_space_mammals", "Mammals"),
+        CUSpace("mock_space_birds", "Birds"),
     )
 
     // ── Space contents ────────────────────────────────────────────────────────
@@ -22,12 +22,12 @@ internal object FakeData {
         "mock_space_mammals" to SpaceContents(
             spaceViews = emptyList(),
             folders = listOf(
-                Folder("mock_folder_hoofed", "Hoofed Animals", listOf(
+                CUFolder("mock_folder_hoofed", "Hoofed Animals", listOf(
                     CUList("mock_list_horse",  "Horse"),
                     CUList("mock_list_zebra",  "Zebra"),
                     CUList("mock_list_donkey", "Donkey"),
                 )),
-                Folder("mock_folder_felines", "Felines", listOf(
+                CUFolder("mock_folder_felines", "Felines", listOf(
                     CUList("mock_list_lion",    "Lion"),
                     CUList("mock_list_cheetah", "Cheetah"),
                     CUList("mock_list_tiger",   "Tiger"),
@@ -41,7 +41,7 @@ internal object FakeData {
         "mock_space_birds" to SpaceContents(
             spaceViews = emptyList(),
             folders = listOf(
-                Folder("mock_folder_raptors", "Raptors", listOf(
+                CUFolder("mock_folder_raptors", "Raptors", listOf(
                     CUList("mock_list_eagle", "Eagle"),
                     CUList("mock_list_hawk",  "Hawk"),
                     CUList("mock_list_owl",   "Owl"),
@@ -72,10 +72,10 @@ internal object FakeData {
 
     // ── Tasks ─────────────────────────────────────────────────────────────────
 
-    private fun tasks(listId: String, vararg names: String): List<Task> =
-        names.mapIndexed { i, name -> Task("${listId}_t$i", name, TaskListRef(listId)) }
+    private fun tasks(listId: String, vararg names: String): List<CUTask> =
+        names.mapIndexed { i, name -> CUTask("${listId}_t$i", name, TaskListRef(listId)) }
 
-    private val tasksByList: Map<String, List<Task>> = mapOf(
+    private val tasksByList: Map<String, List<CUTask>> = mapOf(
         "mock_list_horse"    to tasks("mock_list_horse",    "Brush mane", "Clean hooves", "Schedule vet visit", "Replenish hay supply"),
         "mock_list_zebra"    to tasks("mock_list_zebra",    "Herd check", "Waterhole patrol", "Stripe grooming"),
         "mock_list_donkey"   to tasks("mock_list_donkey",   "Saddle maintenance", "Trail walk", "Grooming session"),
@@ -96,7 +96,7 @@ internal object FakeData {
      * - isListTarget=true  → targetId is a list ID (mock_list_*)
      * - isListTarget=false → targetId is a view ID (mock_view_*); derives list ID by prefix swap
      */
-    fun tasksForTarget(targetId: String, isListTarget: Boolean): List<Task> {
+    fun tasksForTarget(targetId: String, isListTarget: Boolean): List<CUTask> {
         if (isListTarget) return tasksByList[targetId] ?: emptyList()
         val listId = "mock_list_" + targetId.removePrefix("mock_view_")
         return tasksByList[listId] ?: emptyList()
