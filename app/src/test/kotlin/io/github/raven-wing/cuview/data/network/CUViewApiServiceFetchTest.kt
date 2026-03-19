@@ -63,20 +63,18 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val response = service.fetchWorkspaces("token").getOrThrow()
+        val workspaces = service.fetchWorkspaces("token").getOrThrow()
 
-        assertEquals(2, response.teams.size)
-        assertEquals("ws1", response.teams[0].id)
-        assertEquals("Umbrella", response.teams[1].name)
+        assertEquals(2, workspaces.size)
+        assertEquals("ws1", workspaces[0].id)
+        assertEquals("Umbrella", workspaces[1].name)
     }
 
     @Test
     fun fetchWorkspaces_parsesEmptyTeamList() {
         mockServer.enqueue(MockResponse().setBody("""{"teams": []}"""))
 
-        val response = service.fetchWorkspaces("token").getOrThrow()
-
-        assertTrue(response.teams.isEmpty())
+        assertTrue(service.fetchWorkspaces("token").getOrThrow().isEmpty())
     }
 
     // ── fetchSpaces ───────────────────────────────────────────────────────────
@@ -89,11 +87,11 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val response = service.fetchSpaces("ws1", "token").getOrThrow()
+        val spaces = service.fetchSpaces("ws1", "token").getOrThrow()
 
-        assertEquals(2, response.spaces.size)
-        assertEquals("sp1", response.spaces[0].id)
-        assertEquals("Marketing", response.spaces[1].name)
+        assertEquals(2, spaces.size)
+        assertEquals("sp1", spaces[0].id)
+        assertEquals("Marketing", spaces[1].name)
     }
 
     // ── fetchFolders ──────────────────────────────────────────────────────────
@@ -118,10 +116,10 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val response = service.fetchFolders("sp1", "token").getOrThrow()
+        val folders = service.fetchFolders("sp1", "token").getOrThrow()
 
-        assertEquals(1, response.folders.size)
-        val folder = response.folders[0]
+        assertEquals(1, folders.size)
+        val folder = folders[0]
         assertEquals("f1", folder.id)
         assertEquals("Sprint", folder.name)
         assertEquals(2, folder.lists.size)
@@ -133,9 +131,7 @@ class CUViewApiServiceFetchTest {
     fun fetchFolders_parsesEmptyFolderList() {
         mockServer.enqueue(MockResponse().setBody("""{"folders": []}"""))
 
-        val response = service.fetchFolders("sp1", "token").getOrThrow()
-
-        assertTrue(response.folders.isEmpty())
+        assertTrue(service.fetchFolders("sp1", "token").getOrThrow().isEmpty())
     }
 
     // ── fetchFolderlessLists ──────────────────────────────────────────────────
@@ -148,17 +144,17 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val response = service.fetchFolderlessLists("sp1", "token").getOrThrow()
+        val lists = service.fetchFolderlessLists("sp1", "token").getOrThrow()
 
-        assertEquals(2, response.lists.size)
-        assertEquals("l1", response.lists[0].id)
-        assertEquals("Icebox", response.lists[1].name)
+        assertEquals(2, lists.size)
+        assertEquals("l1", lists[0].id)
+        assertEquals("Icebox", lists[1].name)
     }
 
     // ── fetchSpaceViews / fetchFolderViews / fetchListViews ───────────────────
 
     @Test
-    fun fetchSpaceViews_parsesRequiredViewsAndViews() {
+    fun fetchSpaceViews_includesRequiredListViewAndFiltersOutNonListViews() {
         mockServer.enqueue(
             MockResponse().setBody(
                 """
@@ -173,37 +169,33 @@ class CUViewApiServiceFetchTest {
             ),
         )
 
-        val response = service.fetchSpaceViews("sp1", "token").getOrThrow()
+        val views = service.fetchSpaceViews("sp1", "token").getOrThrow()
 
-        // required_views.list should be present
-        assertEquals("rv1", response.requiredViews?.list?.id)
-        // views list should include both additional views
-        assertEquals(2, response.views.size)
-        assertEquals("board", response.views[0].type)
+        // Only the required list view — board and gantt are filtered out
+        assertEquals(1, views.size)
+        assertEquals("rv1", views[0].id)
+        assertEquals("list", views[0].type)
     }
 
     @Test
-    fun fetchFolderViews_parsesViewsWithNullRequiredViews() {
+    fun fetchFolderViews_returnsListTypeViewsOnly() {
         mockServer.enqueue(
             MockResponse().setBody(
                 """{"views": [{"id": "v1", "name": "List View", "type": "list"}]}""",
             ),
         )
 
-        val response = service.fetchFolderViews("f1", "token").getOrThrow()
+        val views = service.fetchFolderViews("f1", "token").getOrThrow()
 
-        assertNull(response.requiredViews)
-        assertEquals(1, response.views.size)
-        assertEquals("v1", response.views[0].id)
+        assertEquals(1, views.size)
+        assertEquals("v1", views[0].id)
     }
 
     @Test
     fun fetchListViews_parsesEmptyViews() {
         mockServer.enqueue(MockResponse().setBody("""{"views": []}"""))
 
-        val response = service.fetchListViews("l1", "token").getOrThrow()
-
-        assertTrue(response.views.isEmpty())
+        assertTrue(service.fetchListViews("l1", "token").getOrThrow().isEmpty())
     }
 
     // ── Authorization header ──────────────────────────────────────────────────
@@ -228,5 +220,3 @@ class CUViewApiServiceFetchTest {
         assertEquals("Bearer pk_another_token", request.getHeader("Authorization"))
     }
 }
-
-private fun assertNull(actual: Any?) = assertTrue("Expected null but was: $actual", actual == null)

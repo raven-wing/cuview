@@ -8,7 +8,6 @@ import io.github.raven_wing.cuview.data.model.CUView
 import io.github.raven_wing.cuview.data.model.CUFolder
 import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUTask
-import io.github.raven_wing.cuview.data.model.ListViewsResponse
 import io.github.raven_wing.cuview.data.network.CUViewApiService
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
@@ -63,7 +62,7 @@ class CUViewRepository(
         if (BuildConfig.USE_MOCK_API) {
             val isListTarget = securePreferences.isListTarget(widgetId)
             val mockTasks = FakeData.tasksForTarget(targetId, isListTarget)
-            if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks mock: target=$targetId isList=$isListTarget -> ${mockTasks.size} tasks")
+            if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks mock: isList=$isListTarget -> ${mockTasks.size} tasks")
             val taskStorage = TaskStorage(context, widgetId)
             taskStorage.saveTasks(mockTasks)
             taskStorage.clearError()
@@ -107,10 +106,9 @@ class CUViewRepository(
                 // will only see spaces from their first workspace.
                 val workspace = apiService.fetchWorkspaces(token)
                     .getOrThrow()
-                    .teams
                     .firstOrNull()
                     ?: return@withContext Result.failure(Exception("No workspaces found"))
-                apiService.fetchSpaces(workspace.id, token).map { it.spaces }
+                apiService.fetchSpaces(workspace.id, token)
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -123,15 +121,9 @@ class CUViewRepository(
             )
             try {
                 coroutineScope {
-                    val viewsDeferred = async {
-                        extractListViews(apiService.fetchSpaceViews(spaceId, token).getOrThrow())
-                    }
-                    val foldersDeferred = async {
-                        apiService.fetchFolders(spaceId, token).getOrThrow().folders
-                    }
-                    val listsDeferred = async {
-                        apiService.fetchFolderlessLists(spaceId, token).getOrThrow().lists
-                    }
+                    val viewsDeferred = async { apiService.fetchSpaceViews(spaceId, token).getOrThrow() }
+                    val foldersDeferred = async { apiService.fetchFolders(spaceId, token).getOrThrow() }
+                    val listsDeferred = async { apiService.fetchFolderlessLists(spaceId, token).getOrThrow() }
                     Result.success(
                         SpaceContents(
                             spaceViews = viewsDeferred.await(),
@@ -149,7 +141,7 @@ class CUViewRepository(
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.folderViews[folderId] ?: emptyList())
             try {
-                Result.success(extractListViews(apiService.fetchFolderViews(folderId, token).getOrThrow()))
+                Result.success(apiService.fetchFolderViews(folderId, token).getOrThrow())
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -159,7 +151,7 @@ class CUViewRepository(
         withContext(Dispatchers.IO) {
             if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.listViews[listId] ?: emptyList())
             try {
-                Result.success(extractListViews(apiService.fetchListViews(listId, token).getOrThrow()))
+                Result.success(apiService.fetchListViews(listId, token).getOrThrow())
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -173,8 +165,4 @@ class CUViewRepository(
             .replace(Regex("https?://\\S+"), "[url]")
             .take(200)
     }
-
-    private fun extractListViews(response: ListViewsResponse): List<CUView> =
-        listOfNotNull(response.requiredViews?.list) +
-            response.views.filter { it.type == "list" }
 }
