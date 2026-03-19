@@ -78,7 +78,13 @@ async def on_fetch(request, env):
             )
 
         data = await resp.json()
-        token = quote(data.access_token, safe="")
+        access_token = getattr(data, "access_token", None)
+        if not access_token:
+            return js.Response.new(
+                build_deep_link_html(build_intent_url(f"error=token_exchange_failed&state={state}")),
+                headers=html_headers,
+            )
+        token = quote(access_token, safe="")
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"token={token}&state={state}")),
             headers=html_headers,

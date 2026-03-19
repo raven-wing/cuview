@@ -67,6 +67,7 @@ class TaskSyncWorker(
         val cachedTasks = taskStorage.loadTasks()
         if (BuildConfig.DEBUG) Log.d("TaskSyncWorker", "doWork: cached=${cachedTasks.size} tasks before sync")
         if (cachedTasks.isEmpty()) {
+            taskStorage.saveSyncStartMs()
             taskStorage.setSyncing(true)
             notifyWidget(widgetId)
         }

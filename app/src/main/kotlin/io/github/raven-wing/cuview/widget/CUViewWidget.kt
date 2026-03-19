@@ -79,9 +79,9 @@ class CUViewWidget : GlanceAppWidget() {
         // here, before provideContent {}, to avoid writing to SharedPreferences inside the
         // composition lambda (a side effect that violates composable purity expectations).
         val isSyncingRaw = taskStorage.isSyncing()
-        val lastUpdatedMs = taskStorage.loadLastUpdatedMs()
-        val syncIsStale = isSyncingRaw && lastUpdatedMs > 0 &&
-            (System.currentTimeMillis() - lastUpdatedMs) > SYNC_STALE_THRESHOLD_MS
+        val syncStartMs = taskStorage.loadSyncStartMs()
+        val syncIsStale = isSyncingRaw && syncStartMs > 0 &&
+            (System.currentTimeMillis() - syncStartMs) > SYNC_STALE_THRESHOLD_MS
         if (syncIsStale) taskStorage.setSyncing(false)
 
         val colors = WidgetTheme.fromId(taskStorage.loadThemeId()).colors.toWidgetColors()

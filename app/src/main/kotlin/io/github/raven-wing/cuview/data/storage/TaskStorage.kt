@@ -51,6 +51,7 @@ class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widget
     private val keyLastError = "last_error_$widgetId"
     private val keyLastUpdatedMs = "last_updated_ms_$widgetId"
     private val keyIsSyncing = "is_syncing_$widgetId"
+    private val keySyncStartMs = "sync_start_ms_$widgetId"
     private val keyTargetName = "target_name_$widgetId"
     private val keyThemeId = "theme_id_$widgetId"
 
@@ -88,6 +89,12 @@ class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widget
 
     fun isSyncing(): Boolean = prefs.getBoolean(keyIsSyncing, false)
 
+    fun saveSyncStartMs() {
+        prefs.edit().putLong(keySyncStartMs, System.currentTimeMillis()).apply()
+    }
+
+    fun loadSyncStartMs(): Long = prefs.getLong(keySyncStartMs, 0L)
+
     fun saveTargetName(name: String) {
         prefs.edit().putString(keyTargetName, name).apply()
     }
@@ -106,6 +113,7 @@ class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widget
             .remove(keyLastError)
             .remove(keyLastUpdatedMs)
             .remove(keyIsSyncing)
+            .remove(keySyncStartMs)
             .remove(keyTargetName)
             .remove(keyThemeId)
             .apply()

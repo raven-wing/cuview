@@ -51,7 +51,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           emulator-options: -no-snapshot-save -no-window -gpu angle_indirect -noaudio -no-boot-anim
-          script: make e2e-all
+          script: make e2e
 
       - name: Upload Maestro report on failure
         if: failure()

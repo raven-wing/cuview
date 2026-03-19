@@ -1,13 +1,13 @@
 PACKAGE     := io.github.raven_wing.cuview
-LAUNCHER    := com.google.android.apps.nexuslauncher
+LAUNCHER    ?= com.google.android.apps.nexuslauncher
 APK         := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
 MAESTRO     := $(HOME)/.maestro/bin/maestro
 
-.PHONY: build install build-release install-release test test-android test-worker lint e2e e2e-all e2e-smoke e2e-reconnect e2e-fast help
+.PHONY: build install build-release install-release test test-android test-worker lint e2e e2e-fast help
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # ── build ──────────────────────────────────────────────────────────────────────
 
@@ -38,28 +38,14 @@ lint: ## Run lint checks
 
 # ── e2e ────────────────────────────────────────────────────────────────────────
 
-e2e-all: install ## Build + install + run all E2E flows (state reset between each)
-	adb shell pm clear $(LAUNCHER)
+e2e: install ## Build + install + run all E2E flows (state reset between each)
+	-adb shell pm clear $(LAUNCHER)
 	adb shell pm clear $(PACKAGE)
 	$(MAESTRO) test e2e/flows/00_smoke.yaml
-	adb shell pm clear $(LAUNCHER)
+	-adb shell pm clear $(LAUNCHER)
 	adb shell pm clear $(PACKAGE)
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 
-e2e: install ## Full E2E: build + install + clear + reconnect flow
-	adb shell pm clear $(LAUNCHER)
-	adb shell pm clear $(PACKAGE)
-	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
-
-e2e-smoke: ## Smoke flow (no build, clears state)
-	adb shell pm clear $(LAUNCHER)
-	adb shell pm clear $(PACKAGE)
+e2e-fast: ## Run all E2E flows without rebuilding or clearing state
 	$(MAESTRO) test e2e/flows/00_smoke.yaml
-
-e2e-reconnect: ## Disconnect/reconnect regression flow (no build, clears state)
-	adb shell pm clear $(LAUNCHER)
-	adb shell pm clear $(PACKAGE)
-	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
-
-e2e-fast: ## Run reconnect flow without rebuilding or clearing state
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
