@@ -35,7 +35,7 @@ class CUViewApiService(
     private inline fun <reified T> get(url: String, token: String): Result<T> {
         val request = Request.Builder()
             .url(url)
-            .header("Authorization", token)
+            .header("Authorization", "Bearer $token")
             .build()
         return try {
             client.newCall(request).execute().use { response ->

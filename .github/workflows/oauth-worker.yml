@@ -2,7 +2,8 @@ name: OAuth Worker
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+    - main
     paths:
       - worker/**
       - .github/workflows/oauth-worker.yml

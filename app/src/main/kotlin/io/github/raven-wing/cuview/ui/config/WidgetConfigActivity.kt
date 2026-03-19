@@ -119,17 +119,13 @@ class WidgetConfigActivity : ComponentActivity() {
         taskStorage.saveTasks(previewTasks)
         taskStorage.saveThemeId(theme.id)
 
-        // Trigger Glance to re-run provideGlance() by bumping the DataStore-backed state.
-        // updateAppWidgetState() is the correct Glance mechanism: it signals the session
-        // manager via a DataStore change, causing provideGlance() to run with fresh TaskStorage
-        // data (including the preview tasks saved above). The lifecycleScope coroutine completes
-        // well before onDestroy() cancels it (~50 ms, activity teardown takes longer).
         val widgetIdCapture = appWidgetId
         lifecycleScope.launch {
             GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(widgetIdCapture)?.let { glanceId ->
                 updateAppWidgetState(this@WidgetConfigActivity, PreferencesGlanceStateDefinition, glanceId) { prefs ->
                     prefs.toMutablePreferences().apply { this[CUViewWidget.REFRESH_KEY] = (this[CUViewWidget.REFRESH_KEY] ?: 0) + 1 }
                 }
+                CUViewWidget().update(this@WidgetConfigActivity, glanceId)
             }
             TaskSyncWorker.enqueueImmediateSync(this@WidgetConfigActivity, widgetIdCapture)
             TaskSyncWorker.enqueuePeriodicSync(this@WidgetConfigActivity, widgetIdCapture)

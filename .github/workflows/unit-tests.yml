@@ -1,4 +1,4 @@
-name: PR CI
+name: Unit Tests
 
 on:
   pull_request:
@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-test:
-    name: Build & Unit Test
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +23,5 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
 
-      - name: Assemble debug APK
-        run: ./gradlew assembleDebug
-
-      - name: Run JVM unit tests
+      - name: Run unit tests
         run: ./gradlew :app:test

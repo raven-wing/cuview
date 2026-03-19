@@ -304,7 +304,7 @@ internal fun ConfigScreen(
                 Button(
                     onClick = {
                         val target = selectedTarget ?: return@Button
-                        val tasks = (previewState as? PreviewState.Loaded)?.tasks ?: emptyList()
+                        val tasks = (previewState as? PreviewState.Loaded)?.tasks ?: initialTasks ?: emptyList()
                         onSave(target.id, target.isListTarget, target.label, tasks, selectedTheme)
                     },
                     // When editing, allow save with cached tasks even while the preview refreshes.

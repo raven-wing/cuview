@@ -1,5 +1,6 @@
 import json
 from urllib.parse import quote
+from pyodide.ffi import JsException
 
 
 # intent:// URLs are Chrome's guaranteed mechanism for firing Android intents from a
@@ -85,7 +86,7 @@ async def on_fetch(request, env):
             headers=html_headers,
         )
 
-    except Exception:
+    except JsException:
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"error=network_error&state={state}")),
             headers=html_headers,

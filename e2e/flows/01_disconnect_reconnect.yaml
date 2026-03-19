@@ -1,4 +1,4 @@
-# Flow 02: connect in app → disconnect → reconnect → add widget → select → save.
+# Flow 01: connect in app → disconnect → reconnect → add widget → select → save.
 #
 # Regression test for the OAuth callback routing bug.
 # In the old architecture, Chrome opened in a separate task that couldn't deliver
@@ -6,7 +6,7 @@
 # entirely into MainActivity (normal app flow), so the widget config never touches
 # Chrome and the result delivery is straightforward.
 #
-# Run via: ./e2e/run.sh 02_disconnect_reconnect.yaml
+# Run via: ./e2e/run.sh 01_disconnect_reconnect.yaml
 #
 appId: io.github.raven_wing.cuview
 ---

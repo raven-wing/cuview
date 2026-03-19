@@ -215,7 +215,7 @@ class CUViewApiServiceFetchTest {
         service.fetchTasks("view-1", "pk_my_secret_token")
 
         val request = mockServer.takeRequest()
-        assertEquals("pk_my_secret_token", request.getHeader("Authorization"))
+        assertEquals("Bearer pk_my_secret_token", request.getHeader("Authorization"))
     }
 
     @Test
@@ -225,7 +225,7 @@ class CUViewApiServiceFetchTest {
         service.fetchWorkspaces("pk_another_token")
 
         val request = mockServer.takeRequest()
-        assertEquals("pk_another_token", request.getHeader("Authorization"))
+        assertEquals("Bearer pk_another_token", request.getHeader("Authorization"))
     }
 }
 
