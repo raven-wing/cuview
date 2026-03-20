@@ -1,7 +1,6 @@
 package io.github.raven_wing.cuview.data.repository
 
 import android.content.Context
-import io.github.raven_wing.cuview.data.network.CUViewApiService
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
@@ -36,7 +35,7 @@ class CUViewRepositoryFolderViewsTest {
         repository = CUViewRepository(
             context = RuntimeEnvironment.getApplication(),
             securePreferences = SecurePreferences(prefs),
-            newApiService = { token -> CUViewApiService(token = token, baseUrl = "http://${mockServer.hostName}:${mockServer.port}") },
+            apiBaseUrl = "http://${mockServer.hostName}:${mockServer.port}",
         )
     }
 
