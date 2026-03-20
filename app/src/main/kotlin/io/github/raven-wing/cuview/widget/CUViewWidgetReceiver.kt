@@ -37,7 +37,7 @@ class CUViewWidgetReceiver : GlanceAppWidgetReceiver() {
         // Skip widgets that haven't been configured yet (e.g. onUpdate fires during the
         // WidgetConfigActivity flow before the user saves their selection).
         appWidgetIds.forEach { widgetId ->
-            if (CUViewRepository.isConfigured(context, widgetId)) {
+            if (CUViewRepository(context).isConfigured(widgetId)) {
                 TaskSyncWorker.enqueueImmediateSync(context, widgetId)
             }
         }

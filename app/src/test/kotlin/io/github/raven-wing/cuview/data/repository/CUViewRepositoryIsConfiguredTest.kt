@@ -11,14 +11,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
-// Regression test: CUViewRepository used to create a new SecurePreferences instance in the
-// companion isConfigured(), separate from the instance used for syncTasks(). TaskSyncWorker
-// called isConfigured() and then constructed a new CUViewRepository, causing two independent
-// Tink key-derivation initializations (~100 ms each) on every sync for a configured widget.
+// Regression test: CUViewRepository used to create a new SecurePreferences instance inside
+// isConfigured(), separate from the instance used for syncTasks(). TaskSyncWorker called
+// isConfigured() and then constructed a new CUViewRepository, causing two independent Tink
+// key-derivation initializations (~100 ms each) on every sync for a configured widget.
 //
-// The fix adds SecurePreferences as a constructor parameter with a default, and moves
-// isConfigured to an instance method so the same SecurePreferences is reused. The companion
-// isConfigured(context, widgetId) delegates to a single repository instance.
+// The fix adds SecurePreferences as a constructor parameter with a default so the same
+// instance is reused across all calls on a single repository.
 //
 // These tests also verify that the injected SecurePreferences is actually consulted, not a
 // separate internally-constructed one.
