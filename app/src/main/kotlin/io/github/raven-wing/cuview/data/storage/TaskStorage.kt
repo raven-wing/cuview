@@ -9,13 +9,14 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * Per-widget task cache backed by [EncryptedSharedPreferences].
+ * Per-widget task cache backed by [SharedPreferences] (encrypted via [EncryptedSharedPreferences]
+ * in production).
  *
  * Each widget instance gets its own keyed set of entries (tasks, error, last-updated
  * timestamp, syncing flag, tasks source name) within a shared `"cuview_task_cache"` file.
  *
  * Design contract:
- * - Stale tasks are **preserved** on sync failure — only the error message is updated.
+ * - Cached tasks are **preserved** on sync failure — only the error message is updated.
  *   This lets the widget show the previous task list with an error banner instead of
  *   going blank.
  * - The `isSyncing` flag is a best-effort hint. [io.github.raven_wing.cuview.widget.CUViewWidget]
