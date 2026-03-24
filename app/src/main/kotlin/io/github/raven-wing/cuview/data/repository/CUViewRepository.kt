@@ -8,6 +8,7 @@ import io.github.raven_wing.cuview.data.model.CUView
 import io.github.raven_wing.cuview.data.model.CUFolder
 import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUTask
+import io.github.raven_wing.cuview.data.network.CUViewApi
 import io.github.raven_wing.cuview.data.network.CUViewApiService
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
@@ -35,7 +36,7 @@ data class SpaceContents(
  * - [previewTasks] is used by the config screen to show a task count before the user saves.
  *
  * When [io.github.raven_wing.cuview.BuildConfig.USE_MOCK_API] is true (debug builds),
- * all methods return data from [FakeData] without hitting the network.
+ * all API calls are routed through [FakeApiService] without hitting the network.
  */
 class CUViewRepository(
     private val context: Context,
@@ -43,7 +44,8 @@ class CUViewRepository(
     private val apiBaseUrl: String = "https://api.clickup.com/api/v2",
 ) {
 
-    private fun api(token: String) = CUViewApiService(token = token, baseUrl = apiBaseUrl)
+    private fun api(token: String): CUViewApi =
+        if (BuildConfig.USE_MOCK_API) FakeApiService else CUViewApiService(token = token, baseUrl = apiBaseUrl)
 
     private suspend fun fetchTasksFromSource(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
         if (isListTasksSource) api(token).fetchTasksByList(viewId) else api(token).fetchTasks(viewId)
@@ -73,14 +75,6 @@ class CUViewRepository(
         val taskStorage = TaskStorage(context, widgetId)
         val isListTasksSource = securePreferences.isListTasksSource(widgetId)
 
-        if (BuildConfig.USE_MOCK_API) {
-            val mockTasks = FakeData.tasksForTasksSource(viewId, isListTasksSource)
-            if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks mock: isList=$isListTasksSource -> ${mockTasks.size} tasks")
-            taskStorage.saveTasks(mockTasks)
-            taskStorage.clearError()
-            return Result.success(Unit)
-        }
-
         return fetchTasksFromSource(viewId, isListTasksSource, token).fold(
             onSuccess = { tasks ->
                 taskStorage.saveTasks(tasks)
@@ -94,50 +88,36 @@ class CUViewRepository(
         )
     }
 
-    suspend fun previewTasks(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> {
-        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.tasksForTasksSource(viewId, isListTasksSource))
-        return withContext(Dispatchers.IO) { fetchTasksFromSource(viewId, isListTasksSource, token) }
+    suspend fun previewTasks(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
+        withContext(Dispatchers.IO) { fetchTasksFromSource(viewId, isListTasksSource, token) }
+
+    suspend fun fetchSpaces(token: String): Result<List<CUSpace>> = apiCall {
+        // NOTE: Only the first workspace is used. Users with multiple workspaces
+        // will only see spaces from their first workspace.
+        val workspace = api(token).fetchWorkspaces().getOrThrow().firstOrNull()
+            ?: throw Exception("No workspaces found")
+        api(token).fetchSpaces(workspace.id).getOrThrow()
     }
 
-    suspend fun fetchSpaces(token: String): Result<List<CUSpace>> {
-        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.spaces)
-        return apiCall {
-            // NOTE: Only the first workspace is used. Users with multiple workspaces
-            // will only see spaces from their first workspace.
-            val workspace = api(token).fetchWorkspaces().getOrThrow().firstOrNull()
-                ?: throw Exception("No workspaces found")
-            api(token).fetchSpaces(workspace.id).getOrThrow()
+    suspend fun fetchSpaceContents(spaceId: String, token: String): Result<SpaceContents> = apiCall {
+        val api = api(token)
+        coroutineScope {
+            val viewsDeferred = async { api.fetchSpaceViews(spaceId).getOrThrow() }
+            val foldersDeferred = async { api.fetchFolders(spaceId).getOrThrow() }
+            val listsDeferred = async { api.fetchFolderlessLists(spaceId).getOrThrow() }
+            SpaceContents(
+                spaceViews = viewsDeferred.await(),
+                folders = foldersDeferred.await(),
+                folderlessLists = listsDeferred.await(),
+            )
         }
     }
 
-    suspend fun fetchSpaceContents(spaceId: String, token: String): Result<SpaceContents> {
-        if (BuildConfig.USE_MOCK_API) return Result.success(
-            FakeData.spaceContents[spaceId] ?: SpaceContents(emptyList(), emptyList(), emptyList())
-        )
-        return apiCall {
-            val api = api(token)
-            coroutineScope {
-                val viewsDeferred = async { api.fetchSpaceViews(spaceId).getOrThrow() }
-                val foldersDeferred = async { api.fetchFolders(spaceId).getOrThrow() }
-                val listsDeferred = async { api.fetchFolderlessLists(spaceId).getOrThrow() }
-                SpaceContents(
-                    spaceViews = viewsDeferred.await(),
-                    folders = foldersDeferred.await(),
-                    folderlessLists = listsDeferred.await(),
-                )
-            }
-        }
-    }
+    suspend fun fetchFolderViews(folderId: String, token: String): Result<List<CUView>> =
+        apiCall { api(token).fetchFolderViews(folderId).getOrThrow() }
 
-    suspend fun fetchFolderViews(folderId: String, token: String): Result<List<CUView>> {
-        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.folderViews[folderId] ?: emptyList())
-        return apiCall { api(token).fetchFolderViews(folderId).getOrThrow() }
-    }
-
-    suspend fun fetchListViews(listId: String, token: String): Result<List<CUView>> {
-        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.listViews[listId] ?: emptyList())
-        return apiCall { api(token).fetchListViews(listId).getOrThrow() }
-    }
+    suspend fun fetchListViews(listId: String, token: String): Result<List<CUView>> =
+        apiCall { api(token).fetchListViews(listId).getOrThrow() }
 
     // Strip URLs (which may contain sensitive path segments like view/list IDs) from error
     // messages before they are stored in TaskStorage and rendered on the home screen widget.
