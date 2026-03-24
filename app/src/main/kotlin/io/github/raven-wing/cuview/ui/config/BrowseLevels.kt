@@ -64,7 +64,7 @@ internal fun SpaceListLevel(
 internal fun SpaceContentsLevel(
     space: CUSpace,
     contentsState: LoadState<SpaceContents>?,
-    selectedTarget: SelectedTarget?,
+    selectedTasksSource: SelectedTasksSource?,
     onBack: () -> Unit,
     onViewClick: (CUView) -> Unit,
     onFolderClick: (CUFolder) -> Unit,
@@ -86,7 +86,7 @@ internal fun SpaceContentsLevel(
                 contents.spaceViews.forEach { view ->
                     BrowseItem(
                         text = view.name,
-                        selected = selectedTarget?.id == view.id && selectedTarget.isListTarget == false,
+                        selected = selectedTasksSource?.id == view.id && selectedTasksSource.isListTasksSource == false,
                         drillDown = false,
                         onClick = { onViewClick(view) },
                     )
@@ -118,7 +118,7 @@ internal fun FolderContentsLevel(
     space: CUSpace,
     folder: CUFolder,
     viewsState: LoadState<List<CUView>>?,
-    selectedTarget: SelectedTarget?,
+    selectedTasksSource: SelectedTasksSource?,
     onBack: () -> Unit,
     onViewClick: (CUView) -> Unit,
     onListClick: (CUList) -> Unit,
@@ -138,7 +138,7 @@ internal fun FolderContentsLevel(
                 viewsState.data.forEach { view ->
                     BrowseItem(
                         text = view.name,
-                        selected = selectedTarget?.id == view.id && selectedTarget.isListTarget == false,
+                        selected = selectedTasksSource?.id == view.id && selectedTasksSource.isListTasksSource == false,
                         drillDown = false,
                         onClick = { onViewClick(view) },
                     )
@@ -164,9 +164,9 @@ internal fun ListSelectionLevel(
     folder: CUFolder?,
     list: CUList,
     viewsState: LoadState<List<CUView>>?,
-    selectedTarget: SelectedTarget?,
+    selectedTasksSource: SelectedTasksSource?,
     onBack: () -> Unit,
-    onTargetClick: (SelectedTarget) -> Unit,
+    onTasksSourceClick: (SelectedTasksSource) -> Unit,
 ) {
     BackRow(label = folder?.name ?: space.name, onBack = onBack)
 
@@ -174,17 +174,17 @@ internal fun ListSelectionLevel(
     Spacer(Modifier.height(8.dp))
     SectionLabel("Select in ${list.name}")
 
-    // The list target is always shown immediately so that a tap arriving via
+    // The list tasks source is always shown immediately so that a tap arriving via
     // propagation from the folder level can auto-select it before views finish loading.
     BrowseItem(
         text = list.name,
-        selected = selectedTarget?.id == list.id && selectedTarget.isListTarget,
+        selected = selectedTasksSource?.id == list.id && selectedTasksSource.isListTasksSource,
         drillDown = false,
         onClick = {
-            onTargetClick(SelectedTarget(
+            onTasksSourceClick(SelectedTasksSource(
                 id = list.id,
                 label = "${space.name}$folderPart \u203a ${list.name}",
-                isListTarget = true,
+                isListTasksSource = true,
             ))
         },
     )
@@ -198,13 +198,13 @@ internal fun ListSelectionLevel(
         is LoadState.Success -> viewsState.data.forEach { view ->
             BrowseItem(
                 text = view.name,
-                selected = selectedTarget?.id == view.id && selectedTarget.isListTarget == false,
+                selected = selectedTasksSource?.id == view.id && selectedTasksSource.isListTasksSource == false,
                 drillDown = false,
                 onClick = {
-                    onTargetClick(SelectedTarget(
+                    onTasksSourceClick(SelectedTasksSource(
                         id = view.id,
                         label = "${space.name}$folderPart \u203a ${list.name} \u203a ${view.name}",
-                        isListTarget = false,
+                        isListTasksSource = false,
                     ))
                 },
             )
@@ -216,14 +216,14 @@ internal fun ListSelectionLevel(
 // ── Preview section ───────────────────────────────────────────────────────────
 
 @Composable
-internal fun PreviewSection(selectedTarget: SelectedTarget?, previewState: PreviewState) {
-    if (selectedTarget == null) return
+internal fun PreviewSection(selectedTasksSource: SelectedTasksSource?, previewState: PreviewState) {
+    if (selectedTasksSource == null) return
 
     Spacer(Modifier.height(20.dp))
     HorizontalDivider()
     Spacer(Modifier.height(12.dp))
     Text(
-        text = selectedTarget.label,
+        text = selectedTasksSource.label,
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
     )

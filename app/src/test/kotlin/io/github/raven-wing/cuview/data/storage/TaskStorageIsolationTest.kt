@@ -85,38 +85,38 @@ class TaskStorageIsolationTest {
         assertFalse(storage.isSyncing())
     }
 
-    // Bug B regression: saveTargetName / loadTargetName must be keyed by widgetId.
+    // Bug B regression: saveTasksSourceName / loadTasksSourceName must be keyed by widgetId.
     // Before the fix, all widgets shared the same SharedPreferences key so widget 2 would
     // display widget 1's list name.
     @Test
-    fun targetName_isIsolatedPerWidget() {
+    fun tasksSourceName_isIsolatedPerWidget() {
         val storage1 = storage(1)
         val storage2 = storage(2)
 
-        storage1.saveTargetName("Sprint Board")
-        storage2.saveTargetName("Backlog")
+        storage1.saveTasksSourceName("Sprint Board")
+        storage2.saveTasksSourceName("Backlog")
 
-        assertEquals("Sprint Board", storage1.loadTargetName())
-        assertEquals("Backlog", storage2.loadTargetName())
+        assertEquals("Sprint Board", storage1.loadTasksSourceName())
+        assertEquals("Backlog", storage2.loadTasksSourceName())
     }
 
-    // Bug C regression: clear() must wipe every field, including isSyncing and targetName.
+    // Bug C regression: clear() must wipe every field, including isSyncing and tasksSourceName.
     // When those two fields were introduced they were initially omitted from clear(), which
     // caused stale syncing/name state to leak into the widget after it was reconfigured.
     @Test
-    fun clear_removesAllFields_includingSyncingAndTargetName() {
+    fun clear_removesAllFields_includingSyncingAndTasksSourceName() {
         val storage = storage(1)
 
         storage.saveTasks(listOf(CUTask("t1", "Task One")))
         storage.saveError("Something went wrong")
         storage.setSyncing(true)
-        storage.saveTargetName("My List")
+        storage.saveTasksSourceName("My List")
 
         storage.clear()
 
         assertTrue(storage.loadTasks().isEmpty())
         assertNull(storage.loadError())
         assertFalse(storage.isSyncing())
-        assertNull(storage.loadTargetName())
+        assertNull(storage.loadTasksSourceName())
     }
 }

@@ -40,28 +40,28 @@ class CUViewRepositoryIsConfiguredTest {
     }
 
     @Test
-    fun isConfigured_returnsFalse_whenNeitherTokenNorTargetSet() {
+    fun isConfigured_returnsFalse_whenNeitherTokenNorTasksSourceSet() {
         assertFalse(repository.isConfigured(widgetId = 1))
     }
 
     @Test
-    fun isConfigured_returnsFalse_whenTokenSetButNoTarget() {
+    fun isConfigured_returnsFalse_whenTokenSetButNoTasksSource() {
         securePrefs.apiToken = "pk_test_token"
 
         assertFalse(repository.isConfigured(widgetId = 1))
     }
 
     @Test
-    fun isConfigured_returnsFalse_whenTargetSetButNoToken() {
-        securePrefs.setTarget(widgetId = 1, id = "view-123", isListTarget = false)
+    fun isConfigured_returnsFalse_whenTasksSourceSetButNoToken() {
+        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
 
         assertFalse(repository.isConfigured(widgetId = 1))
     }
 
     @Test
-    fun isConfigured_returnsTrue_whenBothTokenAndTargetSet() {
+    fun isConfigured_returnsTrue_whenBothTokenAndTasksSourceSet() {
         securePrefs.apiToken = "pk_test_token"
-        securePrefs.setTarget(widgetId = 1, id = "view-123", isListTarget = false)
+        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
 
         assertTrue(repository.isConfigured(widgetId = 1))
     }
@@ -69,16 +69,16 @@ class CUViewRepositoryIsConfiguredTest {
     @Test
     fun isConfigured_isPerWidget_differentWidgetsAreIndependent() {
         securePrefs.apiToken = "pk_test_token"
-        securePrefs.setTarget(widgetId = 1, id = "view-123", isListTarget = false)
+        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
 
         assertTrue(repository.isConfigured(widgetId = 1))
         assertFalse(repository.isConfigured(widgetId = 2))
     }
 
     @Test
-    fun isConfigured_returnsFalse_afterWidgetTargetCleared() {
+    fun isConfigured_returnsFalse_afterWidgetTasksSourceCleared() {
         securePrefs.apiToken = "pk_test_token"
-        securePrefs.setTarget(widgetId = 1, id = "view-123", isListTarget = false)
+        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
         securePrefs.clearWidget(widgetId = 1)
 
         assertFalse(repository.isConfigured(widgetId = 1))

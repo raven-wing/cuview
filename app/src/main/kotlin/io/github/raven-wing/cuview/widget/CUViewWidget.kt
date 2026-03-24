@@ -95,18 +95,18 @@ class CUViewWidget : GlanceAppWidget() {
             val tasks = taskStorage.loadTasks()
             val error = taskStorage.loadError()
             val isSyncing = taskStorage.isSyncing()
-            val targetName = taskStorage.loadTargetName()
+            val tasksSourceName = taskStorage.loadTasksSourceName()
 
             if (BuildConfig.DEBUG) Log.d("CUViewWidget", "compose: widgetId=$widgetId tasks=${tasks.size} error=$error isSyncing=$isSyncing")
 
             GlanceTheme {
-                WidgetContent(tasks = tasks, error = error, isSyncing = isSyncing, targetName = targetName, colors = colors)
+                WidgetContent(tasks = tasks, error = error, isSyncing = isSyncing, tasksSourceName = tasksSourceName, colors = colors)
             }
         }
     }
 
     @Composable
-    private fun WidgetContent(tasks: List<CUTask>, error: String?, isSyncing: Boolean, targetName: String?, colors: WidgetColors) {
+    private fun WidgetContent(tasks: List<CUTask>, error: String?, isSyncing: Boolean, tasksSourceName: String?, colors: WidgetColors) {
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -117,18 +117,18 @@ class CUViewWidget : GlanceAppWidget() {
                 isSyncing && tasks.isEmpty() -> SyncingState(colors)
                 tasks.isEmpty() && error != null -> FullErrorState(error, colors)
                 tasks.isEmpty() -> EmptyState(colors)
-                else -> TaskListState(tasks = tasks, error = error, targetName = targetName, colors = colors)
+                else -> TaskListState(tasks = tasks, error = error, tasksSourceName = tasksSourceName, colors = colors)
             }
         }
     }
 
     @Composable
-    private fun TaskListState(tasks: List<CUTask>, error: String?, targetName: String?, colors: WidgetColors) {
+    private fun TaskListState(tasks: List<CUTask>, error: String?, tasksSourceName: String?, colors: WidgetColors) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
             Header(colors)
-            if (targetName != null) {
+            if (tasksSourceName != null) {
                 Text(
-                    text = targetName,
+                    text = tasksSourceName,
                     style = TextStyle(
                         color = colors.textSecondary,
                         fontSize = 11.sp,

@@ -34,8 +34,8 @@ import kotlinx.coroutines.launch
  * - [setResult] with [RESULT_CANCELED] **must** be the first call in [onCreate]. If the user
  *   presses back, Android uses this result to remove the pending widget slot. Omitting it
  *   causes a broken empty widget to appear on the home screen.
- * - [setResult] with [RESULT_OK] is called in [onConfigSaved] after the user selects a target
- *   and taps Save. This signals Android to finalize widget placement.
+ * - [setResult] with [RESULT_OK] is called in [onConfigSaved] after the user selects a tasks
+ *   source and taps Save. This signals Android to finalize widget placement.
  *
  * [tokenCheckSignal] is incremented in [onResume] so the config screen re-reads the token
  * each time the user returns from [io.github.raven_wing.cuview.ui.main.MainActivity]
@@ -65,16 +65,16 @@ class WidgetConfigActivity : ComponentActivity() {
 
         val taskStorage = TaskStorage(this, appWidgetId)
         val securePrefs = SecurePreferences(this)
-        val savedTargetId = securePrefs.viewId(appWidgetId)
-        val savedLabel = taskStorage.loadTargetName()
-        val initialTarget = if (savedTargetId != null && savedLabel != null) {
-            SelectedTarget(
-                id = savedTargetId,
+        val savedTasksSourceId = securePrefs.viewId(appWidgetId)
+        val savedLabel = taskStorage.loadTasksSourceName()
+        val initialTasksSource = if (savedTasksSourceId != null && savedLabel != null) {
+            SelectedTasksSource(
+                id = savedTasksSourceId,
                 label = savedLabel,
-                isListTarget = securePrefs.isListTarget(appWidgetId),
+                isListTasksSource = securePrefs.isListTasksSource(appWidgetId),
             )
         } else null
-        val initialTasks = if (initialTarget != null) taskStorage.loadTasks() else null
+        val initialTasks = if (initialTasksSource != null) taskStorage.loadTasks() else null
 
         setContent {
             MaterialTheme {
@@ -82,7 +82,7 @@ class WidgetConfigActivity : ComponentActivity() {
                     ConfigScreen(
                         tokenCheckSignal = tokenCheckSignal,
                         initialThemeId = taskStorage.loadThemeId(),
-                        initialTarget = initialTarget,
+                        initialTasksSource = initialTasksSource,
                         initialTasks = initialTasks,
                         onSave = ::onConfigSaved,
                         callbacks = RepositoryCallbacks(
@@ -90,7 +90,7 @@ class WidgetConfigActivity : ComponentActivity() {
                             fetchSpaceContents = repository::fetchSpaceContents,
                             fetchFolderViews = repository::fetchFolderViews,
                             fetchListViews = repository::fetchListViews,
-                            previewTarget = repository::previewTasks,
+                            previewTasksSource = repository::previewTasks,
                         ),
                     )
                 }
@@ -104,18 +104,18 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 
     private fun onConfigSaved(
-        targetId: String,
-        isListTarget: Boolean,
-        targetLabel: String,
+        tasksSourceId: String,
+        isListTasksSource: Boolean,
+        tasksSourceLabel: String,
         previewTasks: List<CUTask>,
         theme: WidgetTheme,
     ) {
         if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: widgetId=$appWidgetId tasks=${previewTasks.size} theme=${theme.id}")
         val prefs = SecurePreferences(this)
-        prefs.setTarget(appWidgetId, targetId, isListTarget)
+        prefs.setTasksSource(appWidgetId, tasksSourceId, isListTasksSource)
 
         val taskStorage = TaskStorage(this, appWidgetId)
-        taskStorage.saveTargetName(targetLabel)
+        taskStorage.saveTasksSourceName(tasksSourceLabel)
         taskStorage.saveTasks(previewTasks)
         taskStorage.saveThemeId(theme.id)
 

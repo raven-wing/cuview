@@ -12,7 +12,7 @@ import kotlinx.serialization.json.Json
  * Per-widget task cache backed by [EncryptedSharedPreferences].
  *
  * Each widget instance gets its own keyed set of entries (tasks, error, last-updated
- * timestamp, syncing flag, target name) within a shared `"cuview_task_cache"` file.
+ * timestamp, syncing flag, tasks source name) within a shared `"cuview_task_cache"` file.
  *
  * Design contract:
  * - Stale tasks are **preserved** on sync failure — only the error message is updated.
@@ -52,7 +52,7 @@ class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widget
     private val keyLastUpdatedMs = "last_updated_ms_$widgetId"
     private val keyIsSyncing = "is_syncing_$widgetId"
     private val keySyncStartMs = "sync_start_ms_$widgetId"
-    private val keyTargetName = "target_name_$widgetId"
+    private val keyTasksSourceName = "tasks_source_name_$widgetId"
     private val keyThemeId = "theme_id_$widgetId"
 
     fun saveTasks(tasks: List<CUTask>) {
@@ -95,11 +95,11 @@ class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widget
 
     fun loadSyncStartMs(): Long = prefs.getLong(keySyncStartMs, 0L)
 
-    fun saveTargetName(name: String) {
-        prefs.edit().putString(keyTargetName, name).apply()
+    fun saveTasksSourceName(name: String) {
+        prefs.edit().putString(keyTasksSourceName, name).apply()
     }
 
-    fun loadTargetName(): String? = prefs.getString(keyTargetName, null)
+    fun loadTasksSourceName(): String? = prefs.getString(keyTasksSourceName, null)
 
     fun saveThemeId(themeId: String) {
         prefs.edit().putString(keyThemeId, themeId).apply()
@@ -114,7 +114,7 @@ class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widget
             .remove(keyLastUpdatedMs)
             .remove(keyIsSyncing)
             .remove(keySyncStartMs)
-            .remove(keyTargetName)
+            .remove(keyTasksSourceName)
             .remove(keyThemeId)
             .apply()
     }

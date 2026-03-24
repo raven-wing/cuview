@@ -92,13 +92,13 @@ internal object FakeData {
     )
 
     /**
-     * Returns tasks for the given target.
-     * - isListTarget=true  → targetId is a list ID (mock_list_*)
-     * - isListTarget=false → targetId is a view ID (mock_view_*); derives list ID by prefix swap
+     * Returns tasks from the given tasks source.
+     * - isListTasksSource=true  → tasksSourceId is a list ID (mock_list_*)
+     * - isListTasksSource=false → tasksSourceId is a view ID (mock_view_*); derives list ID by prefix swap
      */
-    fun tasksForTarget(targetId: String, isListTarget: Boolean): List<CUTask> {
-        if (isListTarget) return tasksByList[targetId] ?: emptyList()
-        val listId = "mock_list_" + targetId.removePrefix("mock_view_")
+    fun tasksForTasksSource(tasksSourceId: String, isListTasksSource: Boolean): List<CUTask> {
+        if (isListTasksSource) return tasksByList[tasksSourceId] ?: emptyList()
+        val listId = "mock_list_" + tasksSourceId.removePrefix("mock_view_")
         return tasksByList[listId] ?: emptyList()
     }
 }

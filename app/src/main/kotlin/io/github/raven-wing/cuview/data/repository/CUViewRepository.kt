@@ -45,7 +45,7 @@ class CUViewRepository(
 
     private fun api(token: String) = CUViewApiService(token = token, baseUrl = apiBaseUrl)
 
-    /** Returns true if the widget has both an API token and a configured target. */
+    /** Returns true if the widget has both an API token and a configured tasks source. */
     fun isConfigured(widgetId: Int): Boolean =
         !securePreferences.apiToken.isNullOrBlank() && !securePreferences.viewId(widgetId).isNullOrBlank()
 
@@ -57,9 +57,9 @@ class CUViewRepository(
         viewId ?: return Result.failure(Exception("View not configured"))
 
         if (BuildConfig.USE_MOCK_API) {
-            val isListTarget = securePreferences.isListTarget(widgetId)
-            val mockTasks = FakeData.tasksForTarget(viewId, isListTarget)
-            if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks mock: isList=$isListTarget -> ${mockTasks.size} tasks")
+            val isListTasksSource = securePreferences.isListTasksSource(widgetId)
+            val mockTasks = FakeData.tasksForTasksSource(viewId, isListTasksSource)
+            if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks mock: isList=$isListTasksSource -> ${mockTasks.size} tasks")
             val taskStorage = TaskStorage(context, widgetId)
             taskStorage.saveTasks(mockTasks)
             taskStorage.clearError()
@@ -67,7 +67,7 @@ class CUViewRepository(
         }
 
         val taskStorage = TaskStorage(context, widgetId)
-        val result = if (securePreferences.isListTarget(widgetId)) {
+        val result = if (securePreferences.isListTasksSource(widgetId)) {
             api(token).fetchTasksByList(viewId)
         } else {
             api(token).fetchTasks(viewId)
@@ -85,10 +85,10 @@ class CUViewRepository(
         )
     }
 
-    suspend fun previewTasks(viewId: String, isListTarget: Boolean, token: String): Result<List<CUTask>> =
+    suspend fun previewTasks(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
         withContext(Dispatchers.IO) {
-            if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.tasksForTarget(viewId, isListTarget))
-            if (isListTarget) api(token).fetchTasksByList(viewId) else api(token).fetchTasks(viewId)
+            if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.tasksForTasksSource(viewId, isListTasksSource))
+            if (isListTasksSource) api(token).fetchTasksByList(viewId) else api(token).fetchTasks(viewId)
         }
 
     suspend fun fetchSpaces(token: String): Result<List<CUSpace>> =

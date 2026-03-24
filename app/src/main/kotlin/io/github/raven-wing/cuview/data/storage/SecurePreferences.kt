@@ -6,14 +6,14 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 /**
- * Encrypted storage for the OAuth token and per-widget target configuration.
+ * Encrypted storage for the OAuth token and per-widget tasks source configuration.
  *
  * Backed by [EncryptedSharedPreferences] with AES-256-GCM. Tink key derivation is lazy
  * (~100 ms on first access) to avoid blocking the widget render thread.
  *
- * The target is stored as a prefixed string (`"list:<id>"` or `"view:<id>"`) rather than
+ * The tasks source is stored as a prefixed string (`"list:<id>"` or `"view:<id>"`) rather than
  * separate keys because [EncryptedSharedPreferences.getBoolean] silently returns the default
- * on a key-type mismatch, making a boolean `isListTarget` field unreliable.
+ * on a key-type mismatch, making a boolean `isListTasksSource` field unreliable.
  *
  * Tests inject a plain [SharedPreferences] via the internal constructor to avoid the
  * Android Keystore, which Robolectric does not support.
@@ -45,32 +45,32 @@ class SecurePreferences private constructor(lazyPrefs: Lazy<SharedPreferences>) 
         get() = prefs.getString(KEY_API_TOKEN, null)
         set(value) = prefs.edit().putString(KEY_API_TOKEN, value).apply()
 
-    // Per-widget target: stored as "list:<id>" or "view:<id>" to avoid boolean storage.
+    // Per-widget tasks source: stored as "list:<id>" or "view:<id>" to avoid boolean storage.
     // EncryptedSharedPreferences getBoolean() silently returns the default when the key
     // type mismatches — encoding the type in the string is more reliable.
 
-    fun viewId(widgetId: Int): String? = prefs.getString(targetKey(widgetId), null)?.let(::decodeId)
+    fun viewId(widgetId: Int): String? = prefs.getString(tasksSourceKey(widgetId), null)?.let(::decodeId)
 
-    fun isListTarget(widgetId: Int): Boolean = prefs.getString(targetKey(widgetId), null)
-        ?.let(::decodeIsListTarget) ?: false
+    fun isListTasksSource(widgetId: Int): Boolean = prefs.getString(tasksSourceKey(widgetId), null)
+        ?.let(::decodeIsListTasksSource) ?: false
 
-    fun setTarget(widgetId: Int, id: String, isListTarget: Boolean) {
-        prefs.edit().putString(targetKey(widgetId), encodeTarget(id, isListTarget)).apply()
+    fun setTasksSource(widgetId: Int, id: String, isListTasksSource: Boolean) {
+        prefs.edit().putString(tasksSourceKey(widgetId), encodeTasksSource(id, isListTasksSource)).apply()
     }
 
     fun clearWidget(widgetId: Int) {
-        prefs.edit().remove(targetKey(widgetId)).apply()
+        prefs.edit().remove(tasksSourceKey(widgetId)).apply()
     }
 
-    private fun targetKey(widgetId: Int) = "target_$widgetId"
+    private fun tasksSourceKey(widgetId: Int) = "tasks_source_$widgetId"
 
     companion object {
         private const val KEY_API_TOKEN = "api_token"
         internal const val LIST_PREFIX = "list:"
         internal const val VIEW_PREFIX = "view:"
 
-        internal fun encodeTarget(id: String, isListTarget: Boolean): String =
-            if (isListTarget) "$LIST_PREFIX$id" else "$VIEW_PREFIX$id"
+        internal fun encodeTasksSource(id: String, isListTasksSource: Boolean): String =
+            if (isListTasksSource) "$LIST_PREFIX$id" else "$VIEW_PREFIX$id"
 
         internal fun decodeId(encoded: String): String = when {
             encoded.startsWith(LIST_PREFIX) -> encoded.removePrefix(LIST_PREFIX)
@@ -78,6 +78,6 @@ class SecurePreferences private constructor(lazyPrefs: Lazy<SharedPreferences>) 
             else -> encoded
         }
 
-        internal fun decodeIsListTarget(encoded: String): Boolean = encoded.startsWith(LIST_PREFIX)
+        internal fun decodeIsListTasksSource(encoded: String): Boolean = encoded.startsWith(LIST_PREFIX)
     }
 }

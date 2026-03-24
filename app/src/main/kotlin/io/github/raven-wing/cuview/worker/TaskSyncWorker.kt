@@ -53,7 +53,7 @@ class TaskSyncWorker(
 
         val repository = CUViewRepository(context)
 
-        // Guard: if the widget has no target configured (e.g. onUpdate fired before the
+        // Guard: if the widget has no tasks source configured (e.g. onUpdate fired before the
         // user finished WidgetConfigActivity), silently bail out — do not flip isSyncing
         // or render "Updating…", which would stick if this worker gets cancelled.
         if (!repository.isConfigured(widgetId)) {

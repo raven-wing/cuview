@@ -47,7 +47,7 @@ internal data class RepositoryCallbacks(
     val fetchSpaceContents: suspend (spaceId: String, token: String) -> Result<SpaceContents>,
     val fetchFolderViews: suspend (folderId: String, token: String) -> Result<List<CUView>>,
     val fetchListViews: suspend (listId: String, token: String) -> Result<List<CUView>>,
-    val previewTarget: suspend (targetId: String, isListTarget: Boolean, token: String) -> Result<List<CUTask>>,
+    val previewTasksSource: suspend (tasksSourceId: String, isListTasksSource: Boolean, token: String) -> Result<List<CUTask>>,
 )
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ private fun <T> Result<T>.toLoadState(fallbackError: String = "Failed to load"):
 
 // ── Selection + preview ───────────────────────────────────────────────────────
 
-internal data class SelectedTarget(val id: String, val label: String, val isListTarget: Boolean)
+internal data class SelectedTasksSource(val id: String, val label: String, val isListTasksSource: Boolean)
 
 internal sealed class PreviewState {
     data object Idle : PreviewState()
@@ -90,9 +90,9 @@ internal sealed class PreviewState {
 internal fun ConfigScreen(
     tokenCheckSignal: Int,
     initialThemeId: String?,
-    initialTarget: SelectedTarget? = null,
+    initialTasksSource: SelectedTasksSource? = null,
     initialTasks: List<CUTask>? = null,
-    onSave: (targetId: String, isListTarget: Boolean, targetLabel: String, previewTasks: List<CUTask>, theme: WidgetTheme) -> Unit,
+    onSave: (tasksSourceId: String, isListTasksSource: Boolean, tasksSourceLabel: String, previewTasks: List<CUTask>, theme: WidgetTheme) -> Unit,
     callbacks: RepositoryCallbacks,
 ) {
     val context = LocalContext.current
@@ -112,7 +112,7 @@ internal fun ConfigScreen(
     var spaceContentsState by remember { mutableStateOf<LoadState<SpaceContents>?>(null) }
     var folderViewsState by remember { mutableStateOf<LoadState<List<CUView>>?>(null) }
     var listViewsState by remember { mutableStateOf<LoadState<List<CUView>>?>(null) }
-    var selectedTarget by remember { mutableStateOf(initialTarget) }
+    var selectedTasksSource by remember { mutableStateOf(initialTasksSource) }
     // Pre-populate with cached tasks when editing so Save is immediately available.
     var previewState by remember {
         mutableStateOf<PreviewState>(
@@ -121,13 +121,13 @@ internal fun ConfigScreen(
     }
     var selectedTheme by remember { mutableStateOf(WidgetTheme.fromId(initialThemeId)) }
 
-    // Keyed on both selectedTarget and apiToken: when editing, the target is pre-set but the
-    // token loads asynchronously, so we need to re-run the preview once the token is available.
-    LaunchedEffect(selectedTarget, apiToken) {
-        val target = selectedTarget ?: run { previewState = PreviewState.Idle; return@LaunchedEffect }
+    // Keyed on both selectedTasksSource and apiToken: when editing, the tasks source is pre-set
+    // but the token loads asynchronously, so we need to re-run the preview once the token is available.
+    LaunchedEffect(selectedTasksSource, apiToken) {
+        val tasksSource = selectedTasksSource ?: run { previewState = PreviewState.Idle; return@LaunchedEffect }
         val token = apiToken ?: return@LaunchedEffect
         previewState = PreviewState.Loading
-        val result = callbacks.previewTarget(target.id, target.isListTarget, token.trim())
+        val result = callbacks.previewTasksSource(tasksSource.id, tasksSource.isListTasksSource, token.trim())
         previewState = result.fold(
             onSuccess = { PreviewState.Loaded(it) },
             onFailure = { PreviewState.Error(it.message ?: "Failed to load tasks") },
@@ -181,7 +181,7 @@ internal fun ConfigScreen(
                             spaceContentsState = null
                             folderViewsState = null
                             listViewsState = null
-                            selectedTarget = null
+                            selectedTasksSource = null
                             scope.launch {
                                 spacesState = callbacks.fetchSpaces(token).toLoadState("Failed to load spaces")
                             }
@@ -191,7 +191,7 @@ internal fun ConfigScreen(
                             spaceContentsState = LoadState.Loading
                             folderViewsState = null
                             listViewsState = null
-                            selectedTarget = null
+                            selectedTasksSource = null
                             scope.launch {
                                 val result = callbacks.fetchSpaceContents(space.id, token)
                                 if (navLevel != NavLevel.SpaceContents(space)) return@launch
@@ -203,25 +203,25 @@ internal fun ConfigScreen(
                     is NavLevel.SpaceContents -> SpaceContentsLevel(
                         space = level.space,
                         contentsState = spaceContentsState,
-                        selectedTarget = selectedTarget,
+                        selectedTasksSource = selectedTasksSource,
                         onBack = {
                             navLevel = NavLevel.Root
                             spaceContentsState = null
-                            selectedTarget = null
+                            selectedTasksSource = null
                         },
                         onViewClick = { view ->
                             previewState = PreviewState.Loading
-                            selectedTarget = SelectedTarget(
+                            selectedTasksSource = SelectedTasksSource(
                                 id = view.id,
                                 label = buildBreadcrumb(level.space.name, view.name),
-                                isListTarget = false,
+                                isListTasksSource = false,
                             )
                         },
                         onFolderClick = { folder ->
                             navLevel = NavLevel.FolderContents(level.space, folder)
                             folderViewsState = LoadState.Loading
                             listViewsState = null
-                            selectedTarget = null
+                            selectedTasksSource = null
                             scope.launch {
                                 val result = callbacks.fetchFolderViews(folder.id, token)
                                 if (navLevel != NavLevel.FolderContents(level.space, folder)) return@launch
@@ -231,7 +231,7 @@ internal fun ConfigScreen(
                         onListClick = { list ->
                             navLevel = NavLevel.ListSelection(level.space, null, list)
                             listViewsState = LoadState.Loading
-                            selectedTarget = null
+                            selectedTasksSource = null
                             scope.launch {
                                 val result = callbacks.fetchListViews(list.id, token)
                                 if (navLevel != NavLevel.ListSelection(level.space, null, list)) return@launch
@@ -244,24 +244,24 @@ internal fun ConfigScreen(
                         space = level.space,
                         folder = level.folder,
                         viewsState = folderViewsState,
-                        selectedTarget = selectedTarget,
+                        selectedTasksSource = selectedTasksSource,
                         onBack = {
                             navLevel = NavLevel.SpaceContents(level.space)
                             folderViewsState = null
-                            selectedTarget = null
+                            selectedTasksSource = null
                         },
                         onViewClick = { view ->
                             previewState = PreviewState.Loading
-                            selectedTarget = SelectedTarget(
+                            selectedTasksSource = SelectedTasksSource(
                                 id = view.id,
                                 label = buildBreadcrumb(level.space.name, level.folder.name, view.name),
-                                isListTarget = false,
+                                isListTasksSource = false,
                             )
                         },
                         onListClick = { list ->
                             navLevel = NavLevel.ListSelection(level.space, level.folder, list)
                             listViewsState = LoadState.Loading
-                            selectedTarget = null
+                            selectedTasksSource = null
                             scope.launch {
                                 val result = callbacks.fetchListViews(list.id, token)
                                 if (navLevel != NavLevel.ListSelection(level.space, level.folder, list)) return@launch
@@ -275,23 +275,23 @@ internal fun ConfigScreen(
                         folder = level.folder,
                         list = level.list,
                         viewsState = listViewsState,
-                        selectedTarget = selectedTarget,
+                        selectedTasksSource = selectedTasksSource,
                         onBack = {
                             navLevel = if (level.folder != null)
                                 NavLevel.FolderContents(level.space, level.folder)
                             else
                                 NavLevel.SpaceContents(level.space)
                             listViewsState = null
-                            selectedTarget = null
+                            selectedTasksSource = null
                         },
-                        onTargetClick = {
+                        onTasksSourceClick = {
                             previewState = PreviewState.Loading
-                            selectedTarget = it
+                            selectedTasksSource = it
                         },
                     )
                 }
 
-                PreviewSection(selectedTarget, previewState)
+                PreviewSection(selectedTasksSource, previewState)
 
                 Spacer(Modifier.height(20.dp))
                 ThemePickerSection(
@@ -300,15 +300,15 @@ internal fun ConfigScreen(
                 )
 
                 Spacer(Modifier.height(24.dp))
-                val isEditing = initialTarget != null
+                val isEditing = initialTasksSource != null
                 Button(
                     onClick = {
-                        val target = selectedTarget ?: return@Button
+                        val tasksSource = selectedTasksSource ?: return@Button
                         val tasks = (previewState as? PreviewState.Loaded)?.tasks ?: initialTasks ?: emptyList()
-                        onSave(target.id, target.isListTarget, target.label, tasks, selectedTheme)
+                        onSave(tasksSource.id, tasksSource.isListTasksSource, tasksSource.label, tasks, selectedTheme)
                     },
                     // When editing, allow save with cached tasks even while the preview refreshes.
-                    enabled = selectedTarget != null &&
+                    enabled = selectedTasksSource != null &&
                         (previewState is PreviewState.Loaded || (isEditing && previewState is PreviewState.Loading)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
