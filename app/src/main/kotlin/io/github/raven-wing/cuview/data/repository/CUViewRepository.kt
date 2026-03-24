@@ -29,7 +29,7 @@ data class SpaceContents(
  *
  * - [syncTasks] is called by [io.github.raven_wing.cuview.worker.TaskSyncWorker] on every
  *   periodic or triggered sync. It writes results to [io.github.raven_wing.cuview.data.storage.TaskStorage]
- *   and preserves stale tasks on failure.
+ *   and preserves cached tasks on failure.
  * - [fetchSpaces], [fetchSpaceContents], [fetchFolderViews], [fetchListViews] drive the
  *   browse tree in [io.github.raven_wing.cuview.ui.config.WidgetConfigActivity].
  * - [previewTasks] is used by the config screen to show a task count before the user saves.
@@ -45,6 +45,20 @@ class CUViewRepository(
 
     private fun api(token: String) = CUViewApiService(token = token, baseUrl = apiBaseUrl)
 
+    private suspend fun fetchTasksFromSource(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
+        if (isListTasksSource) api(token).fetchTasksByList(viewId) else api(token).fetchTasks(viewId)
+
+    private suspend fun <T> apiCall(block: suspend () -> T): Result<T> =
+        withContext(Dispatchers.IO) {
+            try {
+                Result.success(block())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
     /** Returns true if the widget has both an API token and a configured tasks source. */
     fun isConfigured(widgetId: Int): Boolean =
         !securePreferences.apiToken.isNullOrBlank() && !securePreferences.viewId(widgetId).isNullOrBlank()
@@ -56,23 +70,18 @@ class CUViewRepository(
         token ?: return Result.failure(Exception("API token not configured"))
         viewId ?: return Result.failure(Exception("View not configured"))
 
+        val taskStorage = TaskStorage(context, widgetId)
+        val isListTasksSource = securePreferences.isListTasksSource(widgetId)
+
         if (BuildConfig.USE_MOCK_API) {
-            val isListTasksSource = securePreferences.isListTasksSource(widgetId)
             val mockTasks = FakeData.tasksForTasksSource(viewId, isListTasksSource)
             if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks mock: isList=$isListTasksSource -> ${mockTasks.size} tasks")
-            val taskStorage = TaskStorage(context, widgetId)
             taskStorage.saveTasks(mockTasks)
             taskStorage.clearError()
             return Result.success(Unit)
         }
 
-        val taskStorage = TaskStorage(context, widgetId)
-        val result = if (securePreferences.isListTasksSource(widgetId)) {
-            api(token).fetchTasksByList(viewId)
-        } else {
-            api(token).fetchTasks(viewId)
-        }
-        return result.fold(
+        return fetchTasksFromSource(viewId, isListTasksSource, token).fold(
             onSuccess = { tasks ->
                 taskStorage.saveTasks(tasks)
                 taskStorage.clearError()
@@ -85,86 +94,53 @@ class CUViewRepository(
         )
     }
 
-    suspend fun previewTasks(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
-        withContext(Dispatchers.IO) {
-            if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.tasksForTasksSource(viewId, isListTasksSource))
-            if (isListTasksSource) api(token).fetchTasksByList(viewId) else api(token).fetchTasks(viewId)
-        }
+    suspend fun previewTasks(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> {
+        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.tasksForTasksSource(viewId, isListTasksSource))
+        return withContext(Dispatchers.IO) { fetchTasksFromSource(viewId, isListTasksSource, token) }
+    }
 
-    suspend fun fetchSpaces(token: String): Result<List<CUSpace>> =
-        withContext(Dispatchers.IO) {
-            if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.spaces)
-            try {
-                // NOTE: Only the first workspace is used. Users with multiple workspaces
-                // will only see spaces from their first workspace.
-                val workspace = api(token).fetchWorkspaces()
-                    .getOrThrow()
-                    .firstOrNull()
-                    ?: return@withContext Result.failure(Exception("No workspaces found"))
-                api(token).fetchSpaces(workspace.id)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
+    suspend fun fetchSpaces(token: String): Result<List<CUSpace>> {
+        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.spaces)
+        return apiCall {
+            // NOTE: Only the first workspace is used. Users with multiple workspaces
+            // will only see spaces from their first workspace.
+            val workspace = api(token).fetchWorkspaces().getOrThrow().firstOrNull()
+                ?: throw Exception("No workspaces found")
+            api(token).fetchSpaces(workspace.id).getOrThrow()
+        }
+    }
+
+    suspend fun fetchSpaceContents(spaceId: String, token: String): Result<SpaceContents> {
+        if (BuildConfig.USE_MOCK_API) return Result.success(
+            FakeData.spaceContents[spaceId] ?: SpaceContents(emptyList(), emptyList(), emptyList())
+        )
+        return apiCall {
+            val api = api(token)
+            coroutineScope {
+                val viewsDeferred = async { api.fetchSpaceViews(spaceId).getOrThrow() }
+                val foldersDeferred = async { api.fetchFolders(spaceId).getOrThrow() }
+                val listsDeferred = async { api.fetchFolderlessLists(spaceId).getOrThrow() }
+                SpaceContents(
+                    spaceViews = viewsDeferred.await(),
+                    folders = foldersDeferred.await(),
+                    folderlessLists = listsDeferred.await(),
+                )
             }
         }
+    }
 
-    suspend fun fetchSpaceContents(spaceId: String, token: String): Result<SpaceContents> =
-        withContext(Dispatchers.IO) {
-            if (BuildConfig.USE_MOCK_API) return@withContext Result.success(
-                FakeData.spaceContents[spaceId] ?: SpaceContents(emptyList(), emptyList(), emptyList())
-            )
-            try {
-                val api = api(token)
-                coroutineScope {
-                    val viewsDeferred = async { api.fetchSpaceViews(spaceId).getOrThrow() }
-                    val foldersDeferred = async { api.fetchFolders(spaceId).getOrThrow() }
-                    val listsDeferred = async { api.fetchFolderlessLists(spaceId).getOrThrow() }
-                    Result.success(
-                        SpaceContents(
-                            spaceViews = viewsDeferred.await(),
-                            folders = foldersDeferred.await(),
-                            folderlessLists = listsDeferred.await(),
-                        )
-                    )
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-        }
+    suspend fun fetchFolderViews(folderId: String, token: String): Result<List<CUView>> {
+        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.folderViews[folderId] ?: emptyList())
+        return apiCall { api(token).fetchFolderViews(folderId).getOrThrow() }
+    }
 
-    suspend fun fetchFolderViews(folderId: String, token: String): Result<List<CUView>> =
-        withContext(Dispatchers.IO) {
-            if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.folderViews[folderId] ?: emptyList())
-            try {
-                Result.success(api(token).fetchFolderViews(folderId).getOrThrow())
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-        }
-
-    suspend fun fetchListViews(listId: String, token: String): Result<List<CUView>> =
-        withContext(Dispatchers.IO) {
-            if (BuildConfig.USE_MOCK_API) return@withContext Result.success(FakeData.listViews[listId] ?: emptyList())
-            try {
-                Result.success(api(token).fetchListViews(listId).getOrThrow())
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-        }
+    suspend fun fetchListViews(listId: String, token: String): Result<List<CUView>> {
+        if (BuildConfig.USE_MOCK_API) return Result.success(FakeData.listViews[listId] ?: emptyList())
+        return apiCall { api(token).fetchListViews(listId).getOrThrow() }
+    }
 
     // Strip URLs (which may contain sensitive path segments like view/list IDs) from error
     // messages before they are stored in TaskStorage and rendered on the home screen widget.
-    private fun sanitizeErrorMessage(message: String?): String {
-        if (message == null) return "Unknown error"
-        return message
-            .replace(Regex("https?://\\S+"), "[url]")
-            .take(200)
-    }
+    private fun sanitizeErrorMessage(message: String?): String =
+        (message ?: "Unknown error").replace(Regex("https?://\\S+"), "[url]").take(200)
 }
