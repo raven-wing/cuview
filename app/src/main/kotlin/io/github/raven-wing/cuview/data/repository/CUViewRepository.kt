@@ -47,8 +47,8 @@ class CUViewRepository(
     private fun api(token: String): CUViewApi =
         if (BuildConfig.USE_MOCK_API) FakeApiService else CUViewApiService(token = token, baseUrl = apiBaseUrl)
 
-    private suspend fun fetchTasksFromSource(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
-        if (isListTasksSource) api(token).fetchTasksByList(viewId) else api(token).fetchTasks(viewId)
+    private suspend fun fetchTasksFromSource(tasksSourceId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
+        if (isListTasksSource) api(token).fetchTasksByList(tasksSourceId) else api(token).fetchTasks(tasksSourceId)
 
     private suspend fun <T> apiCall(block: suspend () -> T): Result<T> =
         withContext(Dispatchers.IO) {
@@ -67,15 +67,15 @@ class CUViewRepository(
 
     suspend fun syncTasks(widgetId: Int): Result<Unit> {
         val token = securePreferences.apiToken
-        val viewId = securePreferences.viewId(widgetId)
-        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} viewId=${if (viewId != null) "set" else "null"}")
+        val tasksSourceId = securePreferences.viewId(widgetId)
+        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} tasksSourceId=${if (tasksSourceId != null) "set" else "null"}")
         token ?: return Result.failure(Exception("API token not configured"))
-        viewId ?: return Result.failure(Exception("View not configured"))
+        tasksSourceId ?: return Result.failure(Exception("Tasks source not configured"))
 
         val taskStorage = TaskStorage(context, widgetId)
         val isListTasksSource = securePreferences.isListTasksSource(widgetId)
 
-        return fetchTasksFromSource(viewId, isListTasksSource, token).fold(
+        return fetchTasksFromSource(tasksSourceId, isListTasksSource, token).fold(
             onSuccess = { tasks ->
                 taskStorage.saveTasks(tasks)
                 taskStorage.clearError()
@@ -88,8 +88,8 @@ class CUViewRepository(
         )
     }
 
-    suspend fun previewTasks(viewId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
-        withContext(Dispatchers.IO) { fetchTasksFromSource(viewId, isListTasksSource, token) }
+    suspend fun previewTasks(tasksSourceId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
+        withContext(Dispatchers.IO) { fetchTasksFromSource(tasksSourceId, isListTasksSource, token) }
 
     suspend fun fetchSpaces(token: String): Result<List<CUSpace>> = apiCall {
         // NOTE: Only the first workspace is used. Users with multiple workspaces
