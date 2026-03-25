@@ -35,30 +35,30 @@ class SecurePreferencesWidgetTasksSourceTest {
     }
 
     @Test
-    fun setTasksSource_listTasksSource_viewIdReturnsCorrectId() {
+    fun setListTasksSource_viewIdReturnsCorrectId() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "list-xyz", isListTasksSource = true)
+        prefs.setListTasksSource(1, "list-xyz")
         assertEquals("list-xyz", prefs.viewId(1))
     }
 
     @Test
-    fun setTasksSource_viewTasksSource_viewIdReturnsCorrectId() {
+    fun setViewTasksSource_viewIdReturnsCorrectId() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "view-abc", isListTasksSource = false)
+        prefs.setViewTasksSource(1, "view-abc")
         assertEquals("view-abc", prefs.viewId(1))
     }
 
     @Test
-    fun setTasksSource_listTasksSource_isListTasksSourceReturnsTrue() {
+    fun setListTasksSource_isListTasksSourceReturnsTrue() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "list-xyz", isListTasksSource = true)
+        prefs.setListTasksSource(1, "list-xyz")
         assertTrue(prefs.isListTasksSource(1))
     }
 
     @Test
-    fun setTasksSource_viewTasksSource_isListTasksSourceReturnsFalse() {
+    fun setViewTasksSource_isListTasksSourceReturnsFalse() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "view-abc", isListTasksSource = false)
+        prefs.setViewTasksSource(1, "view-abc")
         assertFalse(prefs.isListTasksSource(1))
     }
 
@@ -67,8 +67,8 @@ class SecurePreferencesWidgetTasksSourceTest {
     @Test
     fun setTasksSource_differentWidgets_maintainIsolation() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "list-aaa", isListTasksSource = true)
-        prefs.setTasksSource(2, "view-bbb", isListTasksSource = false)
+        prefs.setListTasksSource(1, "list-aaa")
+        prefs.setViewTasksSource(2, "view-bbb")
 
         assertEquals("list-aaa", prefs.viewId(1))
         assertTrue(prefs.isListTasksSource(1))
@@ -79,7 +79,7 @@ class SecurePreferencesWidgetTasksSourceTest {
     @Test
     fun clearWidget_removesTasksSourceForThatWidget() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "list-xyz", isListTasksSource = true)
+        prefs.setListTasksSource(1, "list-xyz")
 
         prefs.clearWidget(1)
 
@@ -90,8 +90,8 @@ class SecurePreferencesWidgetTasksSourceTest {
     @Test
     fun clearWidget_doesNotAffectOtherWidget() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "list-aaa", isListTasksSource = true)
-        prefs.setTasksSource(2, "view-bbb", isListTasksSource = false)
+        prefs.setListTasksSource(1, "list-aaa")
+        prefs.setViewTasksSource(2, "view-bbb")
 
         prefs.clearWidget(1)
 
@@ -102,8 +102,8 @@ class SecurePreferencesWidgetTasksSourceTest {
     @Test
     fun setTasksSource_overwritesExistingTasksSource() {
         val prefs = makePrefs()
-        prefs.setTasksSource(1, "list-old", isListTasksSource = true)
-        prefs.setTasksSource(1, "view-new", isListTasksSource = false)
+        prefs.setListTasksSource(1, "list-old")
+        prefs.setViewTasksSource(1, "view-new")
 
         assertEquals("view-new", prefs.viewId(1))
         assertFalse(prefs.isListTasksSource(1))

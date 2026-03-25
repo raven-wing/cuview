@@ -90,7 +90,8 @@ class WidgetConfigActivity : ComponentActivity() {
                             fetchSpaceContents = repository::fetchSpaceContents,
                             fetchFolderViews = repository::fetchFolderViews,
                             fetchListViews = repository::fetchListViews,
-                            previewTasksSource = repository::previewTasks,
+                            previewViewTasksSource = repository::previewViewTasks,
+                            previewListTasksSource = repository::previewListTasks,
                         ),
                     )
                 }
@@ -104,18 +105,17 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 
     private fun onConfigSaved(
-        tasksSourceId: String,
-        isListTasksSource: Boolean,
-        tasksSourceLabel: String,
+        tasksSource: SelectedTasksSource,
         previewTasks: List<CUTask>,
         theme: WidgetTheme,
     ) {
         if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: widgetId=$appWidgetId tasks=${previewTasks.size} theme=${theme.id}")
         val prefs = SecurePreferences(this)
-        prefs.setTasksSource(appWidgetId, tasksSourceId, isListTasksSource)
+        if (tasksSource.isListTasksSource) prefs.setListTasksSource(appWidgetId, tasksSource.id)
+        else prefs.setViewTasksSource(appWidgetId, tasksSource.id)
 
         val taskStorage = TaskStorage(this, appWidgetId)
-        taskStorage.saveTasksSourceName(tasksSourceLabel)
+        taskStorage.saveTasksSourceName(tasksSource.label)
         taskStorage.saveTasks(previewTasks)
         taskStorage.saveThemeId(theme.id)
 

@@ -33,7 +33,7 @@ data class SpaceContents(
  *   and preserves cached tasks on failure.
  * - [fetchSpaces], [fetchSpaceContents], [fetchFolderViews], [fetchListViews] drive the
  *   browse tree in [io.github.raven_wing.cuview.ui.config.WidgetConfigActivity].
- * - [previewTasks] is used by the config screen to show a task count before the user saves.
+ * - [previewViewTasks] / [previewListTasks] are used by the config screen to show a task count before the user saves.
  *
  * When [io.github.raven_wing.cuview.BuildConfig.USE_MOCK_API] is true (debug builds),
  * all API calls are routed through [FakeApiService] without hitting the network.
@@ -46,9 +46,6 @@ class CUViewRepository(
 
     private fun api(token: String): CUViewApi =
         if (BuildConfig.USE_MOCK_API) FakeApiService else CUViewApiService(token = token, baseUrl = apiBaseUrl)
-
-    private suspend fun fetchTasksFromSource(tasksSourceId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
-        if (isListTasksSource) api(token).fetchTasksByList(tasksSourceId) else api(token).fetchTasks(tasksSourceId)
 
     private suspend fun <T> apiCall(block: suspend () -> T): Result<T> =
         withContext(Dispatchers.IO) {
@@ -73,9 +70,12 @@ class CUViewRepository(
         tasksSourceId ?: return Result.failure(Exception("Tasks source not configured"))
 
         val taskStorage = TaskStorage(context, widgetId)
-        val isListTasksSource = securePreferences.isListTasksSource(widgetId)
+        val fetch = if (securePreferences.isListTasksSource(widgetId))
+            api(token).fetchTasksByList(tasksSourceId)
+        else
+            api(token).fetchTasks(tasksSourceId)
 
-        return fetchTasksFromSource(tasksSourceId, isListTasksSource, token).fold(
+        return fetch.fold(
             onSuccess = { tasks ->
                 taskStorage.saveTasks(tasks)
                 taskStorage.clearError()
@@ -88,8 +88,11 @@ class CUViewRepository(
         )
     }
 
-    suspend fun previewTasks(tasksSourceId: String, isListTasksSource: Boolean, token: String): Result<List<CUTask>> =
-        withContext(Dispatchers.IO) { fetchTasksFromSource(tasksSourceId, isListTasksSource, token) }
+    suspend fun previewViewTasks(tasksSourceId: String, token: String): Result<List<CUTask>> =
+        withContext(Dispatchers.IO) { api(token).fetchTasks(tasksSourceId) }
+
+    suspend fun previewListTasks(tasksSourceId: String, token: String): Result<List<CUTask>> =
+        withContext(Dispatchers.IO) { api(token).fetchTasksByList(tasksSourceId) }
 
     suspend fun fetchSpaces(token: String): Result<List<CUSpace>> = apiCall {
         // NOTE: Only the first workspace is used. Users with multiple workspaces

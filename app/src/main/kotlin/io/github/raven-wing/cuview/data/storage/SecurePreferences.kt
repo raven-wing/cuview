@@ -54,8 +54,12 @@ class SecurePreferences private constructor(lazyPrefs: Lazy<SharedPreferences>) 
     fun isListTasksSource(widgetId: Int): Boolean = prefs.getString(tasksSourceKey(widgetId), null)
         ?.let(::decodeIsListTasksSource) ?: false
 
-    fun setTasksSource(widgetId: Int, id: String, isListTasksSource: Boolean) {
-        prefs.edit().putString(tasksSourceKey(widgetId), encodeTasksSource(id, isListTasksSource)).apply()
+    fun setViewTasksSource(widgetId: Int, id: String) {
+        prefs.edit().putString(tasksSourceKey(widgetId), encodeTasksSource(id, isListTasksSource = false)).apply()
+    }
+
+    fun setListTasksSource(widgetId: Int, id: String) {
+        prefs.edit().putString(tasksSourceKey(widgetId), encodeTasksSource(id, isListTasksSource = true)).apply()
     }
 
     fun clearWidget(widgetId: Int) {

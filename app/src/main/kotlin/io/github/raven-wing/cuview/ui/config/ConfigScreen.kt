@@ -47,7 +47,8 @@ internal data class RepositoryCallbacks(
     val fetchSpaceContents: suspend (spaceId: String, token: String) -> Result<SpaceContents>,
     val fetchFolderViews: suspend (folderId: String, token: String) -> Result<List<CUView>>,
     val fetchListViews: suspend (listId: String, token: String) -> Result<List<CUView>>,
-    val previewTasksSource: suspend (tasksSourceId: String, isListTasksSource: Boolean, token: String) -> Result<List<CUTask>>,
+    val previewViewTasksSource: suspend (tasksSourceId: String, token: String) -> Result<List<CUTask>>,
+    val previewListTasksSource: suspend (tasksSourceId: String, token: String) -> Result<List<CUTask>>,
 )
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -92,7 +93,7 @@ internal fun ConfigScreen(
     initialThemeId: String?,
     initialTasksSource: SelectedTasksSource? = null,
     initialTasks: List<CUTask>? = null,
-    onSave: (tasksSourceId: String, isListTasksSource: Boolean, tasksSourceLabel: String, previewTasks: List<CUTask>, theme: WidgetTheme) -> Unit,
+    onSave: (tasksSource: SelectedTasksSource, previewTasks: List<CUTask>, theme: WidgetTheme) -> Unit,
     callbacks: RepositoryCallbacks,
 ) {
     val context = LocalContext.current
@@ -127,7 +128,10 @@ internal fun ConfigScreen(
         val tasksSource = selectedTasksSource ?: run { previewState = PreviewState.Idle; return@LaunchedEffect }
         val token = apiToken ?: return@LaunchedEffect
         previewState = PreviewState.Loading
-        val result = callbacks.previewTasksSource(tasksSource.id, tasksSource.isListTasksSource, token.trim())
+        val result = if (tasksSource.isListTasksSource)
+            callbacks.previewListTasksSource(tasksSource.id, token.trim())
+        else
+            callbacks.previewViewTasksSource(tasksSource.id, token.trim())
         previewState = result.fold(
             onSuccess = { PreviewState.Loaded(it) },
             onFailure = { PreviewState.Error(it.message ?: "Failed to load tasks") },
@@ -305,7 +309,7 @@ internal fun ConfigScreen(
                     onClick = {
                         val tasksSource = selectedTasksSource ?: return@Button
                         val tasks = (previewState as? PreviewState.Loaded)?.tasks ?: initialTasks ?: emptyList()
-                        onSave(tasksSource.id, tasksSource.isListTasksSource, tasksSource.label, tasks, selectedTheme)
+                        onSave(tasksSource, tasks, selectedTheme)
                     },
                     // When editing, allow save with cached tasks even while the preview refreshes.
                     enabled = selectedTasksSource != null &&

@@ -53,7 +53,7 @@ class CUViewRepositoryIsConfiguredTest {
 
     @Test
     fun isConfigured_returnsFalse_whenTasksSourceSetButNoToken() {
-        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
+        securePrefs.setViewTasksSource(widgetId = 1, id = "view-123")
 
         assertFalse(repository.isConfigured(widgetId = 1))
     }
@@ -61,7 +61,7 @@ class CUViewRepositoryIsConfiguredTest {
     @Test
     fun isConfigured_returnsTrue_whenBothTokenAndTasksSourceSet() {
         securePrefs.apiToken = "pk_test_token"
-        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
+        securePrefs.setViewTasksSource(widgetId = 1, id = "view-123")
 
         assertTrue(repository.isConfigured(widgetId = 1))
     }
@@ -69,7 +69,7 @@ class CUViewRepositoryIsConfiguredTest {
     @Test
     fun isConfigured_isPerWidget_differentWidgetsAreIndependent() {
         securePrefs.apiToken = "pk_test_token"
-        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
+        securePrefs.setViewTasksSource(widgetId = 1, id = "view-123")
 
         assertTrue(repository.isConfigured(widgetId = 1))
         assertFalse(repository.isConfigured(widgetId = 2))
@@ -78,7 +78,7 @@ class CUViewRepositoryIsConfiguredTest {
     @Test
     fun isConfigured_returnsFalse_afterWidgetTasksSourceCleared() {
         securePrefs.apiToken = "pk_test_token"
-        securePrefs.setTasksSource(widgetId = 1, id = "view-123", isListTasksSource = false)
+        securePrefs.setViewTasksSource(widgetId = 1, id = "view-123")
         securePrefs.clearWidget(widgetId = 1)
 
         assertFalse(repository.isConfigured(widgetId = 1))
