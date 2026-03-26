@@ -21,6 +21,7 @@ import io.github.raven_wing.cuview.BuildConfig
 import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.repository.CUViewRepository
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
+import io.github.raven_wing.cuview.data.storage.StoredTasksSource
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import io.github.raven_wing.cuview.widget.CUViewWidget
 import io.github.raven_wing.cuview.widget.WidgetTheme
@@ -64,14 +65,13 @@ class WidgetConfigActivity : ComponentActivity() {
         }
 
         val taskStorage = TaskStorage(this, appWidgetId)
-        val securePrefs = SecurePreferences(this)
-        val savedTasksSourceId = securePrefs.viewId(appWidgetId)
+        val savedSource = SecurePreferences(this).tasksSource(appWidgetId)
         val savedLabel = taskStorage.loadTasksSourceName()
-        val initialTasksSource = if (savedTasksSourceId != null && savedLabel != null) {
+        val initialTasksSource = if (savedSource != null && savedLabel != null) {
             SelectedTasksSource(
-                id = savedTasksSourceId,
+                id = savedSource.id,
                 label = savedLabel,
-                isListTasksSource = securePrefs.isListTasksSource(appWidgetId),
+                isListTasksSource = savedSource is StoredTasksSource.List,
             )
         } else null
         val initialTasks = if (initialTasksSource != null) taskStorage.loadTasks() else null

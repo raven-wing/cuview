@@ -11,6 +11,7 @@ import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.network.CUViewApi
 import io.github.raven_wing.cuview.data.network.CUViewApiService
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
+import io.github.raven_wing.cuview.data.storage.StoredTasksSource
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -60,20 +61,20 @@ class CUViewRepository(
 
     /** Returns true if the widget has both an API token and a configured tasks source. */
     fun isConfigured(widgetId: Int): Boolean =
-        !securePreferences.apiToken.isNullOrBlank() && !securePreferences.viewId(widgetId).isNullOrBlank()
+        !securePreferences.apiToken.isNullOrBlank() && securePreferences.tasksSource(widgetId) != null
 
     suspend fun syncTasks(widgetId: Int): Result<Unit> {
         val token = securePreferences.apiToken
-        val tasksSourceId = securePreferences.viewId(widgetId)
-        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} tasksSourceId=${if (tasksSourceId != null) "set" else "null"}")
+        val source = securePreferences.tasksSource(widgetId)
+        if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} tasksSourceId=${if (source != null) "set" else "null"}")
         token ?: return Result.failure(Exception("API token not configured"))
-        tasksSourceId ?: return Result.failure(Exception("Tasks source not configured"))
+        source ?: return Result.failure(Exception("Tasks source not configured"))
 
         val taskStorage = TaskStorage(context, widgetId)
-        val fetchResult = if (securePreferences.isListTasksSource(widgetId))
-            api(token).fetchTasksByList(tasksSourceId)
-        else
-            api(token).fetchTasks(tasksSourceId)
+        val fetchResult = when (source) {
+            is StoredTasksSource.List -> api(token).fetchTasksByList(source.id)
+            is StoredTasksSource.View -> api(token).fetchTasks(source.id)
+        }
 
         return fetchResult.fold(
             onSuccess = { tasks ->

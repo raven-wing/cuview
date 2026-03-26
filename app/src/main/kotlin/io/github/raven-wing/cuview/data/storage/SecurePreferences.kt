@@ -8,37 +8,32 @@ import androidx.security.crypto.MasterKey
 /**
  * Encrypted storage for the OAuth token and per-widget tasks source configuration.
  *
- * Backed by [EncryptedSharedPreferences] with AES-256-GCM. Tink key derivation is lazy
- * (~100 ms on first access) to avoid blocking the widget render thread.
+ * Backed by [EncryptedSharedPreferences] with AES-256-GCM. Construction is slow (~100 ms)
+ * so callers should create this on a background thread.
  *
  * The tasks source is stored as a prefixed string (`"list:<id>"` or `"view:<id>"`) rather than
  * separate keys because [EncryptedSharedPreferences.getBoolean] silently returns the default
- * on a key-type mismatch, making a boolean `isListTasksSource` field unreliable.
+ * on a key-type mismatch. [tasksSource] decodes both the id and the type in one read.
  *
  * Tests inject a plain [SharedPreferences] via the internal constructor to avoid the
  * Android Keystore, which Robolectric does not support.
  */
-class SecurePreferences private constructor(lazyPrefs: Lazy<SharedPreferences>) {
+sealed class StoredTasksSource(val id: String) {
+    class View(id: String) : StoredTasksSource(id)
+    class List(id: String) : StoredTasksSource(id)
+}
 
-    // Production constructor — Tink key derivation is deferred (~100 ms) until first access.
-    constructor(context: Context) : this(lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+class SecurePreferences(private val prefs: SharedPreferences) {
+
+    constructor(context: Context) : this(
         EncryptedSharedPreferences.create(
             context,
             "cuview_secure_prefs",
-            masterKey,
+            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
-    })
-
-    // Test constructor — accepts a plain SharedPreferences so tests don't need the Android
-    // Keystore (which Robolectric doesn't support).
-    internal constructor(prefs: SharedPreferences) : this(lazyOf(prefs))
-
-    private val prefs: SharedPreferences by lazyPrefs
+    )
 
     // Shared across all widgets
     var apiToken: String?
@@ -49,10 +44,11 @@ class SecurePreferences private constructor(lazyPrefs: Lazy<SharedPreferences>) 
     // EncryptedSharedPreferences getBoolean() silently returns the default when the key
     // type mismatches — encoding the type in the string is more reliable.
 
-    fun viewId(widgetId: Int): String? = prefs.getString(tasksSourceKey(widgetId), null)?.let(::decodeId)
-
-    fun isListTasksSource(widgetId: Int): Boolean = prefs.getString(tasksSourceKey(widgetId), null)
-        ?.let(::decodeIsListTasksSource) ?: false
+    fun tasksSource(widgetId: Int): StoredTasksSource? {
+        val encoded = prefs.getString(tasksSourceKey(widgetId), null) ?: return null
+        val id = decodeId(encoded)
+        return if (decodeIsListTasksSource(encoded)) StoredTasksSource.List(id) else StoredTasksSource.View(id)
+    }
 
     fun setViewTasksSource(widgetId: Int, id: String) {
         prefs.edit().putString(tasksSourceKey(widgetId), encodeViewTasksSource(id)).apply()

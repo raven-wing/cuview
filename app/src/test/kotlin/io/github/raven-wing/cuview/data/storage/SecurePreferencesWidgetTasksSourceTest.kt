@@ -2,7 +2,6 @@ package io.github.raven_wing.cuview.data.storage
 
 import android.content.Context
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,41 +24,26 @@ class SecurePreferencesWidgetTasksSourceTest {
     )
 
     @Test
-    fun viewId_returnsNullWhenNoTasksSourceSet() {
-        assertNull(makePrefs().viewId(1))
+    fun tasksSource_returnsNullWhenNoTasksSourceSet() {
+        assertNull(makePrefs().tasksSource(1))
     }
 
     @Test
-    fun isListTasksSource_returnsFalseWhenNoTasksSourceSet() {
-        assertFalse(makePrefs().isListTasksSource(1))
-    }
-
-    @Test
-    fun setListTasksSource_viewIdReturnsCorrectId() {
+    fun setListTasksSource_returnsListSourceWithCorrectId() {
         val prefs = makePrefs()
         prefs.setListTasksSource(1, "list-xyz")
-        assertEquals("list-xyz", prefs.viewId(1))
+        val source = prefs.tasksSource(1)
+        assertTrue(source is StoredTasksSource.List)
+        assertEquals("list-xyz", source?.id)
     }
 
     @Test
-    fun setViewTasksSource_viewIdReturnsCorrectId() {
+    fun setViewTasksSource_returnsViewSourceWithCorrectId() {
         val prefs = makePrefs()
         prefs.setViewTasksSource(1, "view-abc")
-        assertEquals("view-abc", prefs.viewId(1))
-    }
-
-    @Test
-    fun setListTasksSource_isListTasksSourceReturnsTrue() {
-        val prefs = makePrefs()
-        prefs.setListTasksSource(1, "list-xyz")
-        assertTrue(prefs.isListTasksSource(1))
-    }
-
-    @Test
-    fun setViewTasksSource_isListTasksSourceReturnsFalse() {
-        val prefs = makePrefs()
-        prefs.setViewTasksSource(1, "view-abc")
-        assertFalse(prefs.isListTasksSource(1))
+        val source = prefs.tasksSource(1)
+        assertTrue(source is StoredTasksSource.View)
+        assertEquals("view-abc", source?.id)
     }
 
     // Regression: per-widget tasks source keys must include the widgetId so different widgets
@@ -70,10 +54,10 @@ class SecurePreferencesWidgetTasksSourceTest {
         prefs.setListTasksSource(1, "list-aaa")
         prefs.setViewTasksSource(2, "view-bbb")
 
-        assertEquals("list-aaa", prefs.viewId(1))
-        assertTrue(prefs.isListTasksSource(1))
-        assertEquals("view-bbb", prefs.viewId(2))
-        assertFalse(prefs.isListTasksSource(2))
+        assertTrue(prefs.tasksSource(1) is StoredTasksSource.List)
+        assertEquals("list-aaa", prefs.tasksSource(1)?.id)
+        assertTrue(prefs.tasksSource(2) is StoredTasksSource.View)
+        assertEquals("view-bbb", prefs.tasksSource(2)?.id)
     }
 
     @Test
@@ -83,8 +67,7 @@ class SecurePreferencesWidgetTasksSourceTest {
 
         prefs.clearWidget(1)
 
-        assertNull(prefs.viewId(1))
-        assertFalse(prefs.isListTasksSource(1))
+        assertNull(prefs.tasksSource(1))
     }
 
     @Test
@@ -95,8 +78,8 @@ class SecurePreferencesWidgetTasksSourceTest {
 
         prefs.clearWidget(1)
 
-        assertNull(prefs.viewId(1))
-        assertEquals("view-bbb", prefs.viewId(2))
+        assertNull(prefs.tasksSource(1))
+        assertEquals("view-bbb", prefs.tasksSource(2)?.id)
     }
 
     @Test
@@ -105,7 +88,7 @@ class SecurePreferencesWidgetTasksSourceTest {
         prefs.setListTasksSource(1, "list-old")
         prefs.setViewTasksSource(1, "view-new")
 
-        assertEquals("view-new", prefs.viewId(1))
-        assertFalse(prefs.isListTasksSource(1))
+        assertTrue(prefs.tasksSource(1) is StoredTasksSource.View)
+        assertEquals("view-new", prefs.tasksSource(1)?.id)
     }
 }
