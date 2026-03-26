@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import io.github.raven_wing.cuview.data.model.TasksSource
 
 /**
  * Encrypted storage for the OAuth token and per-widget tasks source configuration.
@@ -18,11 +19,6 @@ import androidx.security.crypto.MasterKey
  * Tests inject a plain [SharedPreferences] via the internal constructor to avoid the
  * Android Keystore, which Robolectric does not support.
  */
-sealed class StoredTasksSource(val id: String) {
-    class View(id: String) : StoredTasksSource(id)
-    class List(id: String) : StoredTasksSource(id)
-}
-
 class SecurePreferences(private val prefs: SharedPreferences) {
 
     constructor(context: Context) : this(
@@ -44,10 +40,10 @@ class SecurePreferences(private val prefs: SharedPreferences) {
     // EncryptedSharedPreferences getBoolean() silently returns the default when the key
     // type mismatches — encoding the type in the string is more reliable.
 
-    fun tasksSource(widgetId: Int): StoredTasksSource? {
+    fun tasksSource(widgetId: Int): TasksSource? {
         val encoded = prefs.getString(tasksSourceKey(widgetId), null) ?: return null
         val id = decodeId(encoded)
-        return if (decodeIsListTasksSource(encoded)) StoredTasksSource.List(id) else StoredTasksSource.View(id)
+        return if (decodeIsListTasksSource(encoded)) TasksSource.List(id) else TasksSource.View(id)
     }
 
     fun setViewTasksSource(widgetId: Int, id: String) {

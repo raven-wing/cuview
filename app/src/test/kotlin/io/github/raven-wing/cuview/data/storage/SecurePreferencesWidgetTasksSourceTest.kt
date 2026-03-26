@@ -1,6 +1,7 @@
 package io.github.raven_wing.cuview.data.storage
 
 import android.content.Context
+import io.github.raven_wing.cuview.data.model.TasksSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -33,7 +34,7 @@ class SecurePreferencesWidgetTasksSourceTest {
         val prefs = makePrefs()
         prefs.setListTasksSource(1, "list-xyz")
         val source = prefs.tasksSource(1)
-        assertTrue(source is StoredTasksSource.List)
+        assertTrue(source is TasksSource.List)
         assertEquals("list-xyz", source?.id)
     }
 
@@ -42,7 +43,7 @@ class SecurePreferencesWidgetTasksSourceTest {
         val prefs = makePrefs()
         prefs.setViewTasksSource(1, "view-abc")
         val source = prefs.tasksSource(1)
-        assertTrue(source is StoredTasksSource.View)
+        assertTrue(source is TasksSource.View)
         assertEquals("view-abc", source?.id)
     }
 
@@ -54,9 +55,9 @@ class SecurePreferencesWidgetTasksSourceTest {
         prefs.setListTasksSource(1, "list-aaa")
         prefs.setViewTasksSource(2, "view-bbb")
 
-        assertTrue(prefs.tasksSource(1) is StoredTasksSource.List)
+        assertTrue(prefs.tasksSource(1) is TasksSource.List)
         assertEquals("list-aaa", prefs.tasksSource(1)?.id)
-        assertTrue(prefs.tasksSource(2) is StoredTasksSource.View)
+        assertTrue(prefs.tasksSource(2) is TasksSource.View)
         assertEquals("view-bbb", prefs.tasksSource(2)?.id)
     }
 
@@ -88,7 +89,7 @@ class SecurePreferencesWidgetTasksSourceTest {
         prefs.setListTasksSource(1, "list-old")
         prefs.setViewTasksSource(1, "view-new")
 
-        assertTrue(prefs.tasksSource(1) is StoredTasksSource.View)
+        assertTrue(prefs.tasksSource(1) is TasksSource.View)
         assertEquals("view-new", prefs.tasksSource(1)?.id)
     }
 }

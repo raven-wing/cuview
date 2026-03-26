@@ -19,9 +19,9 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
 import io.github.raven_wing.cuview.BuildConfig
 import io.github.raven_wing.cuview.data.model.CUTask
+import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.repository.CUViewRepository
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
-import io.github.raven_wing.cuview.data.storage.StoredTasksSource
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import io.github.raven_wing.cuview.widget.CUViewWidget
 import io.github.raven_wing.cuview.widget.WidgetTheme
@@ -72,13 +72,9 @@ class WidgetConfigActivity : ComponentActivity() {
                 val taskStorage = TaskStorage(this@WidgetConfigActivity, widgetIdCapture)
                 val savedSource = securePrefs.tasksSource(widgetIdCapture)
                 val savedLabel = taskStorage.loadTasksSourceName()
-                val initialTasksSource = if (savedSource != null && savedLabel != null) {
-                    SelectedTasksSource(
-                        id = savedSource.id,
-                        label = savedLabel,
-                        isListTasksSource = savedSource is StoredTasksSource.List,
-                    )
-                } else null
+                val initialTasksSource = if (savedSource != null && savedLabel != null)
+                    savedSource.withLabel(savedLabel)
+                else null
                 InitialConfig(
                     repository = CUViewRepository(this@WidgetConfigActivity, securePrefs),
                     initialTasksSource = initialTasksSource,
@@ -117,14 +113,16 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 
     private fun onConfigSaved(
-        tasksSource: SelectedTasksSource,
+        tasksSource: TasksSource,
         previewTasks: List<CUTask>,
         theme: WidgetTheme,
     ) {
         if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: widgetId=$appWidgetId tasks=${previewTasks.size} theme=${theme.id}")
         val prefs = SecurePreferences(this)
-        if (tasksSource.isListTasksSource) prefs.setListTasksSource(appWidgetId, tasksSource.id)
-        else prefs.setViewTasksSource(appWidgetId, tasksSource.id)
+        when (tasksSource) {
+            is TasksSource.List -> prefs.setListTasksSource(appWidgetId, tasksSource.id)
+            is TasksSource.View -> prefs.setViewTasksSource(appWidgetId, tasksSource.id)
+        }
 
         val taskStorage = TaskStorage(this, appWidgetId)
         taskStorage.saveTasksSourceName(tasksSource.label)
@@ -150,7 +148,7 @@ class WidgetConfigActivity : ComponentActivity() {
 
 private data class InitialConfig(
     val repository: CUViewRepository,
-    val initialTasksSource: SelectedTasksSource?,
+    val initialTasksSource: TasksSource?,
     val initialTasks: List<CUTask>?,
     val initialThemeId: String?,
 )

@@ -31,6 +31,7 @@ import io.github.raven_wing.cuview.data.model.CUList
 import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.CUView
+import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.repository.SpaceContents
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.ui.main.MainActivity
@@ -76,8 +77,6 @@ private fun <T> Result<T>.toLoadState(fallbackError: String = "Failed to load"):
 
 // ── Selection + preview ───────────────────────────────────────────────────────
 
-internal data class SelectedTasksSource(val id: String, val label: String, val isListTasksSource: Boolean)
-
 internal sealed class PreviewState {
     data object Idle : PreviewState()
     data object Loading : PreviewState()
@@ -91,9 +90,9 @@ internal sealed class PreviewState {
 internal fun ConfigScreen(
     tokenCheckSignal: Int,
     initialThemeId: String?,
-    initialTasksSource: SelectedTasksSource? = null,
+    initialTasksSource: TasksSource? = null,
     initialTasks: List<CUTask>? = null,
-    onSave: (tasksSource: SelectedTasksSource, previewTasks: List<CUTask>, theme: WidgetTheme) -> Unit,
+    onSave: (tasksSource: TasksSource, previewTasks: List<CUTask>, theme: WidgetTheme) -> Unit,
     callbacks: RepositoryCallbacks,
 ) {
     val context = LocalContext.current
@@ -128,10 +127,10 @@ internal fun ConfigScreen(
         val tasksSource = selectedTasksSource ?: run { previewState = PreviewState.Idle; return@LaunchedEffect }
         val token = apiToken ?: return@LaunchedEffect
         previewState = PreviewState.Loading
-        val result = if (tasksSource.isListTasksSource)
-            callbacks.previewListTasksSource(tasksSource.id, token.trim())
-        else
-            callbacks.previewViewTasksSource(tasksSource.id, token.trim())
+        val result = when (tasksSource) {
+            is TasksSource.List -> callbacks.previewListTasksSource(tasksSource.id, token.trim())
+            is TasksSource.View -> callbacks.previewViewTasksSource(tasksSource.id, token.trim())
+        }
         previewState = result.fold(
             onSuccess = { PreviewState.Loaded(it) },
             onFailure = { PreviewState.Error(it.message ?: "Failed to load tasks") },
@@ -215,11 +214,7 @@ internal fun ConfigScreen(
                         },
                         onViewClick = { view ->
                             previewState = PreviewState.Loading
-                            selectedTasksSource = SelectedTasksSource(
-                                id = view.id,
-                                label = buildBreadcrumb(level.space.name, view.name),
-                                isListTasksSource = false,
-                            )
+                            selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, view.name))
                         },
                         onFolderClick = { folder ->
                             navLevel = NavLevel.FolderContents(level.space, folder)
@@ -256,11 +251,7 @@ internal fun ConfigScreen(
                         },
                         onViewClick = { view ->
                             previewState = PreviewState.Loading
-                            selectedTasksSource = SelectedTasksSource(
-                                id = view.id,
-                                label = buildBreadcrumb(level.space.name, level.folder.name, view.name),
-                                isListTasksSource = false,
-                            )
+                            selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, level.folder.name, view.name))
                         },
                         onListClick = { list ->
                             navLevel = NavLevel.ListSelection(level.space, level.folder, list)

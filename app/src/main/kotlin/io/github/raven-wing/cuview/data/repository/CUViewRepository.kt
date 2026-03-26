@@ -10,8 +10,8 @@ import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.network.CUViewApi
 import io.github.raven_wing.cuview.data.network.CUViewApiService
+import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
-import io.github.raven_wing.cuview.data.storage.StoredTasksSource
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -71,10 +71,7 @@ class CUViewRepository(
         source ?: return Result.failure(Exception("Tasks source not configured"))
 
         val taskStorage = TaskStorage(context, widgetId)
-        val fetchResult = when (source) {
-            is StoredTasksSource.List -> api(token).fetchTasksByList(source.id)
-            is StoredTasksSource.View -> api(token).fetchTasks(source.id)
-        }
+        val fetchResult = api(token).fetchTasksBySource(source)
 
         return fetchResult.fold(
             onSuccess = { tasks ->

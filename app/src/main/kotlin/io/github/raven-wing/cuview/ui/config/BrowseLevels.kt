@@ -22,6 +22,7 @@ import io.github.raven_wing.cuview.data.model.CUFolder
 import io.github.raven_wing.cuview.data.model.CUList
 import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUView
+import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.repository.SpaceContents
 
 // ── Level 1: space list ───────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ internal fun SpaceListLevel(
 internal fun SpaceContentsLevel(
     space: CUSpace,
     contentsState: LoadState<SpaceContents>?,
-    selectedTasksSource: SelectedTasksSource?,
+    selectedTasksSource: TasksSource?,
     onBack: () -> Unit,
     onViewClick: (CUView) -> Unit,
     onFolderClick: (CUFolder) -> Unit,
@@ -86,7 +87,7 @@ internal fun SpaceContentsLevel(
                 contents.spaceViews.forEach { view ->
                     BrowseItem(
                         text = view.name,
-                        selected = selectedTasksSource?.id == view.id && selectedTasksSource.isListTasksSource == false,
+                        selected = selectedTasksSource is TasksSource.View && selectedTasksSource.id == view.id,
                         drillDown = false,
                         onClick = { onViewClick(view) },
                     )
@@ -118,7 +119,7 @@ internal fun FolderContentsLevel(
     space: CUSpace,
     folder: CUFolder,
     viewsState: LoadState<List<CUView>>?,
-    selectedTasksSource: SelectedTasksSource?,
+    selectedTasksSource: TasksSource?,
     onBack: () -> Unit,
     onViewClick: (CUView) -> Unit,
     onListClick: (CUList) -> Unit,
@@ -138,7 +139,7 @@ internal fun FolderContentsLevel(
                 viewsState.data.forEach { view ->
                     BrowseItem(
                         text = view.name,
-                        selected = selectedTasksSource?.id == view.id && selectedTasksSource.isListTasksSource == false,
+                        selected = selectedTasksSource is TasksSource.View && selectedTasksSource.id == view.id,
                         drillDown = false,
                         onClick = { onViewClick(view) },
                     )
@@ -164,9 +165,9 @@ internal fun ListSelectionLevel(
     folder: CUFolder?,
     list: CUList,
     viewsState: LoadState<List<CUView>>?,
-    selectedTasksSource: SelectedTasksSource?,
+    selectedTasksSource: TasksSource?,
     onBack: () -> Unit,
-    onTasksSourceClick: (SelectedTasksSource) -> Unit,
+    onTasksSourceClick: (TasksSource) -> Unit,
 ) {
     BackRow(label = folder?.name ?: space.name, onBack = onBack)
 
@@ -178,14 +179,10 @@ internal fun ListSelectionLevel(
     // propagation from the folder level can auto-select it before views finish loading.
     BrowseItem(
         text = list.name,
-        selected = selectedTasksSource?.id == list.id && selectedTasksSource.isListTasksSource,
+        selected = selectedTasksSource is TasksSource.List && selectedTasksSource.id == list.id,
         drillDown = false,
         onClick = {
-            onTasksSourceClick(SelectedTasksSource(
-                id = list.id,
-                label = "${space.name}$folderPart \u203a ${list.name}",
-                isListTasksSource = true,
-            ))
+            onTasksSourceClick(TasksSource.List(list.id, "${space.name}$folderPart \u203a ${list.name}"))
         },
     )
 
@@ -198,14 +195,10 @@ internal fun ListSelectionLevel(
         is LoadState.Success -> viewsState.data.forEach { view ->
             BrowseItem(
                 text = view.name,
-                selected = selectedTasksSource?.id == view.id && selectedTasksSource.isListTasksSource == false,
+                selected = selectedTasksSource is TasksSource.View && selectedTasksSource.id == view.id,
                 drillDown = false,
                 onClick = {
-                    onTasksSourceClick(SelectedTasksSource(
-                        id = view.id,
-                        label = "${space.name}$folderPart \u203a ${list.name} \u203a ${view.name}",
-                        isListTasksSource = false,
-                    ))
+                    onTasksSourceClick(TasksSource.View(view.id, "${space.name}$folderPart \u203a ${list.name} \u203a ${view.name}"))
                 },
             )
         }
@@ -216,7 +209,7 @@ internal fun ListSelectionLevel(
 // ── Preview section ───────────────────────────────────────────────────────────
 
 @Composable
-internal fun PreviewSection(selectedTasksSource: SelectedTasksSource?, previewState: PreviewState) {
+internal fun PreviewSection(selectedTasksSource: TasksSource?, previewState: PreviewState) {
     if (selectedTasksSource == null) return
 
     Spacer(Modifier.height(20.dp))
