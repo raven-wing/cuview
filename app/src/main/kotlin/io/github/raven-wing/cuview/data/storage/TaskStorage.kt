@@ -25,28 +25,18 @@ import kotlinx.serialization.json.Json
  * Tests inject a plain [SharedPreferences] via the internal constructor to avoid the
  * Android Keystore, which Robolectric does not support.
  */
-class TaskStorage private constructor(lazyPrefs: Lazy<SharedPreferences>, widgetId: Int) {
+class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
 
-    // Production constructor — Tink key derivation is deferred until first access,
-    // same pattern as SecurePreferences, to avoid blocking the widget render thread.
-    constructor(context: Context, widgetId: Int) : this(lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+    constructor(context: Context, widgetId: Int) : this(
         EncryptedSharedPreferences.create(
             context,
             "cuview_task_cache",
-            masterKey,
+            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
-    }, widgetId)
-
-    // Test constructor — accepts a plain SharedPreferences so tests don't need the Android
-    // Keystore (which Robolectric doesn't support).
-    internal constructor(prefs: SharedPreferences, widgetId: Int) : this(lazyOf(prefs), widgetId)
-
-    private val prefs: SharedPreferences by lazyPrefs
+        ),
+        widgetId,
+    )
 
     private val keyTasksJson = "tasks_json_$widgetId"
     private val keyLastError = "last_error_$widgetId"
