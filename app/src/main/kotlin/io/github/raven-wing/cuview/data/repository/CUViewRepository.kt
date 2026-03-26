@@ -10,6 +10,7 @@ import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.network.CUViewApi
 import io.github.raven_wing.cuview.data.network.CUViewApiService
+import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import kotlinx.coroutines.CancellationException
@@ -86,11 +87,8 @@ class CUViewRepository(
         )
     }
 
-    suspend fun previewViewTasks(tasksSourceId: String, token: String): Result<List<CUTask>> =
-        withContext(Dispatchers.IO) { api(token).fetchTasks(tasksSourceId) }
-
-    suspend fun previewListTasks(tasksSourceId: String, token: String): Result<List<CUTask>> =
-        withContext(Dispatchers.IO) { api(token).fetchTasksByList(tasksSourceId) }
+    suspend fun previewTasks(source: TasksSource, token: String): Result<List<CUTask>> =
+        withContext(Dispatchers.IO) { api(token).fetchTasksBySource(source) }
 
     suspend fun fetchSpaces(token: String): Result<List<CUSpace>> = apiCall {
         // NOTE: Only the first workspace is used. Users with multiple workspaces

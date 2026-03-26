@@ -93,8 +93,7 @@ class WidgetConfigActivity : ComponentActivity() {
                                 fetchSpaceContents = config.repository::fetchSpaceContents,
                                 fetchFolderViews = config.repository::fetchFolderViews,
                                 fetchListViews = config.repository::fetchListViews,
-                                previewViewTasksSource = config.repository::previewViewTasks,
-                                previewListTasksSource = config.repository::previewListTasks,
+                                previewTasksSource = config.repository::previewTasks,
                             ),
                         )
                     }

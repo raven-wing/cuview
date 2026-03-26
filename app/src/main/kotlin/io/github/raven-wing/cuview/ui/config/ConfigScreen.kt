@@ -48,8 +48,7 @@ internal data class RepositoryCallbacks(
     val fetchSpaceContents: suspend (spaceId: String, token: String) -> Result<SpaceContents>,
     val fetchFolderViews: suspend (folderId: String, token: String) -> Result<List<CUView>>,
     val fetchListViews: suspend (listId: String, token: String) -> Result<List<CUView>>,
-    val previewViewTasksSource: suspend (tasksSourceId: String, token: String) -> Result<List<CUTask>>,
-    val previewListTasksSource: suspend (tasksSourceId: String, token: String) -> Result<List<CUTask>>,
+    val previewTasksSource: suspend (source: TasksSource, token: String) -> Result<List<CUTask>>,
 )
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -127,10 +126,7 @@ internal fun ConfigScreen(
         val tasksSource = selectedTasksSource ?: run { previewState = PreviewState.Idle; return@LaunchedEffect }
         val token = apiToken ?: return@LaunchedEffect
         previewState = PreviewState.Loading
-        val result = when (tasksSource) {
-            is TasksSource.List -> callbacks.previewListTasksSource(tasksSource.id, token.trim())
-            is TasksSource.View -> callbacks.previewViewTasksSource(tasksSource.id, token.trim())
-        }
+        val result = callbacks.previewTasksSource(tasksSource, token.trim())
         previewState = result.fold(
             onSuccess = { PreviewState.Loaded(it) },
             onFailure = { PreviewState.Error(it.message ?: "Failed to load tasks") },
