@@ -10,7 +10,6 @@ import io.github.raven_wing.cuview.data.model.CUSpace
 import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.network.CUViewApi
 import io.github.raven_wing.cuview.data.network.CUViewApiService
-import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import kotlinx.coroutines.CancellationException
@@ -43,6 +42,7 @@ class CUViewRepository(
     private val context: Context,
     private val securePreferences: SecurePreferences = SecurePreferences(context),
     private val apiBaseUrl: String = "https://api.clickup.com/api/v2",
+    internal val taskStorageFor: (widgetId: Int) -> TaskStorage = { TaskStorage(context, it) },
 ) {
 
     private fun api(token: String): CUViewApi =
@@ -61,16 +61,16 @@ class CUViewRepository(
 
     /** Returns true if the widget has both an API token and a configured tasks source. */
     fun isConfigured(widgetId: Int): Boolean =
-        !securePreferences.apiToken.isNullOrBlank() && securePreferences.tasksSource(widgetId) != null
+        !securePreferences.apiToken.isNullOrBlank() && taskStorageFor(widgetId).loadTasksSource() != null
 
     suspend fun syncTasks(widgetId: Int): Result<Unit> {
         val token = securePreferences.apiToken
-        val source = securePreferences.tasksSource(widgetId)
+        val taskStorage = taskStorageFor(widgetId)
+        val source = taskStorage.loadTasksSource()
         if (BuildConfig.DEBUG) Log.d("CUViewRepo", "syncTasks: widgetId=$widgetId token=${if (token != null) "set" else "null"} tasksSourceId=${if (source != null) "set" else "null"}")
         token ?: return Result.failure(Exception("API token not configured"))
         source ?: return Result.failure(Exception("Tasks source not configured"))
 
-        val taskStorage = TaskStorage(context, widgetId)
         val fetchResult = api(token).fetchTasksBySource(source)
 
         return fetchResult.fold(

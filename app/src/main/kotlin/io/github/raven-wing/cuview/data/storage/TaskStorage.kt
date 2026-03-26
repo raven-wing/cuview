@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import io.github.raven_wing.cuview.data.model.CUTask
+import io.github.raven_wing.cuview.data.model.TasksSource
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -43,7 +44,8 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
     private val keyLastUpdatedMs = "last_updated_ms_$widgetId"
     private val keyIsSyncing = "is_syncing_$widgetId"
     private val keySyncStartMs = "sync_start_ms_$widgetId"
-    private val keyTasksSourceName = "tasks_source_name_$widgetId"
+    private val keyTasksSourceTypeId = "tasks_source_type_id_$widgetId"
+    private val keyTasksSourceLabel = "tasks_source_label_$widgetId"
     private val keyThemeId = "theme_id_$widgetId"
 
     fun saveTasks(tasks: List<CUTask>) {
@@ -86,11 +88,22 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
 
     fun loadSyncStartMs(): Long = prefs.getLong(keySyncStartMs, 0L)
 
-    fun saveTasksSourceName(name: String) {
-        prefs.edit().putString(keyTasksSourceName, name).apply()
+    fun saveViewTasksSource(id: String, label: String) {
+        prefs.edit().putString(keyTasksSourceTypeId, "view:$id").putString(keyTasksSourceLabel, label).apply()
     }
 
-    fun loadTasksSourceName(): String? = prefs.getString(keyTasksSourceName, null)
+    fun saveListTasksSource(id: String, label: String) {
+        prefs.edit().putString(keyTasksSourceTypeId, "list:$id").putString(keyTasksSourceLabel, label).apply()
+    }
+
+    fun loadTasksSource(): TasksSource? {
+        val typeId = prefs.getString(keyTasksSourceTypeId, null) ?: return null
+        val label = prefs.getString(keyTasksSourceLabel, null) ?: return null
+        return if (typeId.startsWith("list:"))
+            TasksSource.List(typeId.removePrefix("list:"), label)
+        else
+            TasksSource.View(typeId.removePrefix("view:"), label)
+    }
 
     fun saveThemeId(themeId: String) {
         prefs.edit().putString(keyThemeId, themeId).apply()
@@ -105,7 +118,8 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
             .remove(keyLastUpdatedMs)
             .remove(keyIsSyncing)
             .remove(keySyncStartMs)
-            .remove(keyTasksSourceName)
+            .remove(keyTasksSourceTypeId)
+            .remove(keyTasksSourceLabel)
             .remove(keyThemeId)
             .apply()
     }

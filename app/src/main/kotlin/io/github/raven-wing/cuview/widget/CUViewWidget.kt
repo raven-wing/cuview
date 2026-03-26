@@ -95,7 +95,7 @@ class CUViewWidget : GlanceAppWidget() {
             val tasks = taskStorage.loadTasks()
             val error = taskStorage.loadError()
             val isSyncing = taskStorage.isSyncing()
-            val tasksSourceName = taskStorage.loadTasksSourceName()
+            val tasksSourceName = taskStorage.loadTasksSource()?.label
 
             if (BuildConfig.DEBUG) Log.d("CUViewWidget", "compose: widgetId=$widgetId tasks=${tasks.size} error=$error isSyncing=$isSyncing")
 

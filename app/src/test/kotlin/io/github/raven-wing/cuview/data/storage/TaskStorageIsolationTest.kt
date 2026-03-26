@@ -2,6 +2,7 @@ package io.github.raven_wing.cuview.data.storage
 
 import android.content.Context
 import io.github.raven_wing.cuview.data.model.CUTask
+import io.github.raven_wing.cuview.data.model.TasksSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -85,38 +86,40 @@ class TaskStorageIsolationTest {
         assertFalse(storage.isSyncing())
     }
 
-    // Bug B regression: saveTasksSourceName / loadTasksSourceName must be keyed by widgetId.
+    // Bug B regression: tasks source storage must be keyed by widgetId.
     // Before the fix, all widgets shared the same SharedPreferences key so widget 2 would
     // display widget 1's list name.
     @Test
-    fun tasksSourceName_isIsolatedPerWidget() {
+    fun tasksSource_isIsolatedPerWidget() {
         val storage1 = storage(1)
         val storage2 = storage(2)
 
-        storage1.saveTasksSourceName("Sprint Board")
-        storage2.saveTasksSourceName("Backlog")
+        storage1.saveListTasksSource("list-aaa", "Sprint Board")
+        storage2.saveViewTasksSource("view-bbb", "Backlog")
 
-        assertEquals("Sprint Board", storage1.loadTasksSourceName())
-        assertEquals("Backlog", storage2.loadTasksSourceName())
+        assertTrue(storage1.loadTasksSource() is TasksSource.List)
+        assertEquals("Sprint Board", storage1.loadTasksSource()?.label)
+        assertTrue(storage2.loadTasksSource() is TasksSource.View)
+        assertEquals("Backlog", storage2.loadTasksSource()?.label)
     }
 
-    // Bug C regression: clear() must wipe every field, including isSyncing and tasksSourceName.
+    // Bug C regression: clear() must wipe every field, including isSyncing and tasks source.
     // When those two fields were introduced they were initially omitted from clear(), which
-    // caused stale syncing/name state to leak into the widget after it was reconfigured.
+    // caused stale syncing/source state to leak into the widget after it was reconfigured.
     @Test
-    fun clear_removesAllFields_includingSyncingAndTasksSourceName() {
+    fun clear_removesAllFields_includingSyncingAndTasksSource() {
         val storage = storage(1)
 
         storage.saveTasks(listOf(CUTask("t1", "Task One")))
         storage.saveError("Something went wrong")
         storage.setSyncing(true)
-        storage.saveTasksSourceName("My List")
+        storage.saveViewTasksSource("view-123", "My List")
 
         storage.clear()
 
         assertTrue(storage.loadTasks().isEmpty())
         assertNull(storage.loadError())
         assertFalse(storage.isSyncing())
-        assertNull(storage.loadTasksSourceName())
+        assertNull(storage.loadTasksSource())
     }
 }

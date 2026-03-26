@@ -4,13 +4,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 sealed class TasksSource(val id: String, val label: String) {
-    class View(id: String, label: String = "") : TasksSource(id, label)
-    class List(id: String, label: String = "") : TasksSource(id, label)
-
-    fun withLabel(label: String): TasksSource = when (this) {
-        is View -> View(id, label)
-        is List -> List(id, label)
-    }
+    class View(id: String, label: String) : TasksSource(id, label)
+    class List(id: String, label: String) : TasksSource(id, label)
 }
 
 @Serializable

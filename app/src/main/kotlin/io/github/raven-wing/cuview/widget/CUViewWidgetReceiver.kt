@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import io.github.raven_wing.cuview.data.repository.CUViewRepository
-import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import io.github.raven_wing.cuview.worker.TaskSyncWorker
 
@@ -45,11 +44,9 @@ class CUViewWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
-        val prefs = SecurePreferences(context)
         appWidgetIds.forEach { widgetId ->
             TaskSyncWorker.cancelPeriodicSync(context, widgetId)
             TaskStorage(context, widgetId).clear()
-            prefs.clearWidget(widgetId)
         }
     }
 }
