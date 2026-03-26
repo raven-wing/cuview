@@ -55,11 +55,11 @@ class SecurePreferences private constructor(lazyPrefs: Lazy<SharedPreferences>) 
         ?.let(::decodeIsListTasksSource) ?: false
 
     fun setViewTasksSource(widgetId: Int, id: String) {
-        prefs.edit().putString(tasksSourceKey(widgetId), encodeTasksSource(id, isListTasksSource = false)).apply()
+        prefs.edit().putString(tasksSourceKey(widgetId), encodeViewTasksSource(id)).apply()
     }
 
     fun setListTasksSource(widgetId: Int, id: String) {
-        prefs.edit().putString(tasksSourceKey(widgetId), encodeTasksSource(id, isListTasksSource = true)).apply()
+        prefs.edit().putString(tasksSourceKey(widgetId), encodeListTasksSource(id)).apply()
     }
 
     fun clearWidget(widgetId: Int) {
@@ -73,8 +73,8 @@ class SecurePreferences private constructor(lazyPrefs: Lazy<SharedPreferences>) 
         internal const val LIST_PREFIX = "list:"
         internal const val VIEW_PREFIX = "view:"
 
-        internal fun encodeTasksSource(id: String, isListTasksSource: Boolean): String =
-            if (isListTasksSource) "$LIST_PREFIX$id" else "$VIEW_PREFIX$id"
+        internal fun encodeViewTasksSource(id: String): String = "$VIEW_PREFIX$id"
+        internal fun encodeListTasksSource(id: String): String = "$LIST_PREFIX$id"
 
         internal fun decodeId(encoded: String): String = when {
             encoded.startsWith(LIST_PREFIX) -> encoded.removePrefix(LIST_PREFIX)

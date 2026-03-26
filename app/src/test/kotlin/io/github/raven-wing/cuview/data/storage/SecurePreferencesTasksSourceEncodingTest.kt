@@ -13,45 +13,45 @@ import org.junit.Test
 class SecurePreferencesTasksSourceEncodingTest {
 
     @Test
-    fun encodeTasksSource_listTasksSource_startsWithListPrefix() {
-        val encoded = SecurePreferences.encodeTasksSource("abc123", isListTasksSource = true)
+    fun encodeListTasksSource_startsWithListPrefix() {
+        val encoded = SecurePreferences.encodeListTasksSource("abc123")
         assertTrue(encoded.startsWith(SecurePreferences.LIST_PREFIX))
     }
 
     @Test
-    fun encodeTasksSource_viewTasksSource_startsWithViewPrefix() {
-        val encoded = SecurePreferences.encodeTasksSource("abc123", isListTasksSource = false)
+    fun encodeViewTasksSource_startsWithViewPrefix() {
+        val encoded = SecurePreferences.encodeViewTasksSource("abc123")
         assertTrue(encoded.startsWith(SecurePreferences.VIEW_PREFIX))
     }
 
     @Test
     fun decodeIsListTasksSource_listEncoded_returnsTrue() {
-        val encoded = SecurePreferences.encodeTasksSource("abc123", isListTasksSource = true)
+        val encoded = SecurePreferences.encodeListTasksSource("abc123")
         assertTrue(SecurePreferences.decodeIsListTasksSource(encoded))
     }
 
     @Test
     fun decodeIsListTasksSource_viewEncoded_returnsFalse() {
-        val encoded = SecurePreferences.encodeTasksSource("abc123", isListTasksSource = false)
+        val encoded = SecurePreferences.encodeViewTasksSource("abc123")
         assertFalse(SecurePreferences.decodeIsListTasksSource(encoded))
     }
 
     @Test
     fun decodeId_listEncoded_returnsBareId() {
-        val encoded = SecurePreferences.encodeTasksSource("abc123", isListTasksSource = true)
+        val encoded = SecurePreferences.encodeListTasksSource("abc123")
         assertEquals("abc123", SecurePreferences.decodeId(encoded))
     }
 
     @Test
     fun decodeId_viewEncoded_returnsBareId() {
-        val encoded = SecurePreferences.encodeTasksSource("xyz789", isListTasksSource = false)
+        val encoded = SecurePreferences.encodeViewTasksSource("xyz789")
         assertEquals("xyz789", SecurePreferences.decodeId(encoded))
     }
 
     @Test
     fun roundTrip_listTasksSource_preservesIdAndType() {
         val id = "9a2f7c"
-        val encoded = SecurePreferences.encodeTasksSource(id, isListTasksSource = true)
+        val encoded = SecurePreferences.encodeListTasksSource(id)
         assertEquals(id, SecurePreferences.decodeId(encoded))
         assertTrue(SecurePreferences.decodeIsListTasksSource(encoded))
     }
@@ -59,7 +59,7 @@ class SecurePreferencesTasksSourceEncodingTest {
     @Test
     fun roundTrip_viewTasksSource_preservesIdAndType() {
         val id = "9a2f7c"
-        val encoded = SecurePreferences.encodeTasksSource(id, isListTasksSource = false)
+        val encoded = SecurePreferences.encodeViewTasksSource(id)
         assertEquals(id, SecurePreferences.decodeId(encoded))
         assertFalse(SecurePreferences.decodeIsListTasksSource(encoded))
     }

@@ -70,12 +70,12 @@ class CUViewRepository(
         tasksSourceId ?: return Result.failure(Exception("Tasks source not configured"))
 
         val taskStorage = TaskStorage(context, widgetId)
-        val fetch = if (securePreferences.isListTasksSource(widgetId))
+        val fetchResult = if (securePreferences.isListTasksSource(widgetId))
             api(token).fetchTasksByList(tasksSourceId)
         else
             api(token).fetchTasks(tasksSourceId)
 
-        return fetch.fold(
+        return fetchResult.fold(
             onSuccess = { tasks ->
                 taskStorage.saveTasks(tasks)
                 taskStorage.clearError()

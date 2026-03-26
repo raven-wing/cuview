@@ -10,10 +10,10 @@ import io.github.raven_wing.cuview.data.network.CUViewApi
 
 internal object FakeApiService : CUViewApi {
     override fun fetchTasks(viewId: String): Result<List<CUTask>> =
-        Result.success(FakeData.tasksForTasksSource(viewId, isListTasksSource = false))
+        Result.success(FakeData.tasksForView(viewId))
 
     override fun fetchTasksByList(listId: String): Result<List<CUTask>> =
-        Result.success(FakeData.tasksForTasksSource(listId, isListTasksSource = true))
+        Result.success(FakeData.tasksForList(listId))
 
     override fun fetchWorkspaces(): Result<List<CUWorkspace>> =
         Result.success(listOf(CUWorkspace("mock_workspace", "Mock Workspace")))
