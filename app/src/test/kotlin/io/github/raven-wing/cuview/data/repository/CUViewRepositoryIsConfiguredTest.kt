@@ -1,6 +1,7 @@
 package io.github.raven_wing.cuview.data.repository
 
 import android.content.Context
+import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import org.junit.Assert.assertFalse
@@ -62,7 +63,7 @@ class CUViewRepositoryIsConfiguredTest {
 
     @Test
     fun isConfigured_returnsFalse_whenTasksSourceSetButNoToken() {
-        taskStorage(1).saveViewTasksSource("view-123", "My View")
+        taskStorage(1).saveTasksSource(TasksSource.View("view-123", "My View"))
 
         assertFalse(repository.isConfigured(widgetId = 1))
     }
@@ -70,7 +71,7 @@ class CUViewRepositoryIsConfiguredTest {
     @Test
     fun isConfigured_returnsTrue_whenBothTokenAndTasksSourceSet() {
         securePrefs.apiToken = "pk_test_token"
-        taskStorage(1).saveViewTasksSource("view-123", "My View")
+        taskStorage(1).saveTasksSource(TasksSource.View("view-123", "My View"))
 
         assertTrue(repository.isConfigured(widgetId = 1))
     }
@@ -78,7 +79,7 @@ class CUViewRepositoryIsConfiguredTest {
     @Test
     fun isConfigured_isPerWidget_differentWidgetsAreIndependent() {
         securePrefs.apiToken = "pk_test_token"
-        taskStorage(1).saveViewTasksSource("view-123", "My View")
+        taskStorage(1).saveTasksSource(TasksSource.View("view-123", "My View"))
 
         assertTrue(repository.isConfigured(widgetId = 1))
         assertFalse(repository.isConfigured(widgetId = 2))
@@ -87,7 +88,7 @@ class CUViewRepositoryIsConfiguredTest {
     @Test
     fun isConfigured_returnsFalse_afterWidgetTasksSourceCleared() {
         securePrefs.apiToken = "pk_test_token"
-        taskStorage(1).saveViewTasksSource("view-123", "My View")
+        taskStorage(1).saveTasksSource(TasksSource.View("view-123", "My View"))
         taskStorage(1).clear()
 
         assertFalse(repository.isConfigured(widgetId = 1))

@@ -68,16 +68,17 @@ class WidgetConfigActivity : ComponentActivity() {
 
         val widgetIdCapture = appWidgetId
         lifecycleScope.launch {
-            val config = withContext(Dispatchers.IO) {
+            val repository: CUViewRepository
+            val initialTasksSource: TasksSource?
+            val initialTasks: List<CUTask>?
+            val initialThemeId: String?
+            withContext(Dispatchers.IO) {
                 val securePrefs = SecurePreferences(this@WidgetConfigActivity)
                 val taskStorage = TaskStorage(this@WidgetConfigActivity, widgetIdCapture)
-                val initialTasksSource = taskStorage.loadTasksSource()
-                InitialConfig(
-                    repository = CUViewRepository(this@WidgetConfigActivity, securePrefs),
-                    initialTasksSource = initialTasksSource,
-                    initialTasks = if (initialTasksSource != null) taskStorage.loadTasks() else null,
-                    initialThemeId = taskStorage.loadThemeId(),
-                )
+                initialTasksSource = taskStorage.loadTasksSource()
+                initialTasks = if (initialTasksSource != null) taskStorage.loadTasks() else null
+                initialThemeId = taskStorage.loadThemeId()
+                repository = CUViewRepository(this@WidgetConfigActivity, securePrefs)
             }
 
             setContent {
@@ -86,16 +87,16 @@ class WidgetConfigActivity : ComponentActivity() {
                         ConfigScreen(
                             apiToken = apiToken,
                             isCheckingToken = isCheckingToken,
-                            initialThemeId = config.initialThemeId,
-                            initialTasksSource = config.initialTasksSource,
-                            initialTasks = config.initialTasks,
+                            initialThemeId = initialThemeId,
+                            initialTasksSource = initialTasksSource,
+                            initialTasks = initialTasks,
                             onSave = ::onConfigSaved,
                             callbacks = RepositoryCallbacks(
-                                fetchSpaces = config.repository::fetchSpaces,
-                                fetchSpaceContents = config.repository::fetchSpaceContents,
-                                fetchFolderViews = config.repository::fetchFolderViews,
-                                fetchListViews = config.repository::fetchListViews,
-                                previewTasksSource = config.repository::previewTasks,
+                                fetchSpaces = repository::fetchSpaces,
+                                fetchSpaceContents = repository::fetchSpaceContents,
+                                fetchFolderViews = repository::fetchFolderViews,
+                                fetchListViews = repository::fetchListViews,
+                                previewTasksSource = repository::previewTasks,
                             ),
                         )
                     }
@@ -119,10 +120,7 @@ class WidgetConfigActivity : ComponentActivity() {
     ) {
         if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: widgetId=$appWidgetId tasks=${previewTasks.size} theme=${theme.id}")
         val taskStorage = TaskStorage(this, appWidgetId)
-        when (tasksSource) {
-            is TasksSource.List -> taskStorage.saveListTasksSource(tasksSource.id, tasksSource.label)
-            is TasksSource.View -> taskStorage.saveViewTasksSource(tasksSource.id, tasksSource.label)
-        }
+        taskStorage.saveTasksSource(tasksSource)
         taskStorage.saveTasks(previewTasks)
         taskStorage.saveThemeId(theme.id)
 
@@ -143,9 +141,3 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 }
 
-private data class InitialConfig(
-    val repository: CUViewRepository,
-    val initialTasksSource: TasksSource?,
-    val initialTasks: List<CUTask>?,
-    val initialThemeId: String?,
-)

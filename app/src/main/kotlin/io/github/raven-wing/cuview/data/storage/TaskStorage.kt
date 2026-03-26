@@ -88,12 +88,9 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
 
     fun loadSyncStartMs(): Long = prefs.getLong(keySyncStartMs, 0L)
 
-    fun saveViewTasksSource(id: String, label: String) {
-        prefs.edit().putString(keyTasksSourceTypeId, "view:$id").putString(keyTasksSourceLabel, label).apply()
-    }
-
-    fun saveListTasksSource(id: String, label: String) {
-        prefs.edit().putString(keyTasksSourceTypeId, "list:$id").putString(keyTasksSourceLabel, label).apply()
+    fun saveTasksSource(source: TasksSource) = when (source) {
+        is TasksSource.List -> prefs.edit().putString(keyTasksSourceTypeId, "list:${source.id}").putString(keyTasksSourceLabel, source.label).apply()
+        is TasksSource.View -> prefs.edit().putString(keyTasksSourceTypeId, "view:${source.id}").putString(keyTasksSourceLabel, source.label).apply()
     }
 
     fun loadTasksSource(): TasksSource? {

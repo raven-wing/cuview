@@ -94,8 +94,8 @@ class TaskStorageIsolationTest {
         val storage1 = storage(1)
         val storage2 = storage(2)
 
-        storage1.saveListTasksSource("list-aaa", "Sprint Board")
-        storage2.saveViewTasksSource("view-bbb", "Backlog")
+        storage1.saveTasksSource(TasksSource.List("list-aaa", "Sprint Board"))
+        storage2.saveTasksSource(TasksSource.View("view-bbb", "Backlog"))
 
         assertTrue(storage1.loadTasksSource() is TasksSource.List)
         assertEquals("Sprint Board", storage1.loadTasksSource()?.label)
@@ -113,7 +113,7 @@ class TaskStorageIsolationTest {
         storage.saveTasks(listOf(CUTask("t1", "Task One")))
         storage.saveError("Something went wrong")
         storage.setSyncing(true)
-        storage.saveViewTasksSource("view-123", "My List")
+        storage.saveTasksSource(TasksSource.View("view-123", "My List"))
 
         storage.clear()
 
