@@ -26,7 +26,9 @@ import io.github.raven_wing.cuview.data.storage.TaskStorage
 import io.github.raven_wing.cuview.widget.CUViewWidget
 import io.github.raven_wing.cuview.widget.WidgetTheme
 import io.github.raven_wing.cuview.worker.TaskSyncWorker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Configuration screen shown by Android when the user places the widget on the home screen.
@@ -45,7 +47,6 @@ import kotlinx.coroutines.launch
 class WidgetConfigActivity : ComponentActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private val repository by lazy { CUViewRepository(this) }
     private var tokenCheckSignal by mutableStateOf(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,36 +65,47 @@ class WidgetConfigActivity : ComponentActivity() {
             return
         }
 
-        val taskStorage = TaskStorage(this, appWidgetId)
-        val savedSource = SecurePreferences(this).tasksSource(appWidgetId)
-        val savedLabel = taskStorage.loadTasksSourceName()
-        val initialTasksSource = if (savedSource != null && savedLabel != null) {
-            SelectedTasksSource(
-                id = savedSource.id,
-                label = savedLabel,
-                isListTasksSource = savedSource is StoredTasksSource.List,
-            )
-        } else null
-        val initialTasks = if (initialTasksSource != null) taskStorage.loadTasks() else null
-
-        setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    ConfigScreen(
-                        tokenCheckSignal = tokenCheckSignal,
-                        initialThemeId = taskStorage.loadThemeId(),
-                        initialTasksSource = initialTasksSource,
-                        initialTasks = initialTasks,
-                        onSave = ::onConfigSaved,
-                        callbacks = RepositoryCallbacks(
-                            fetchSpaces = repository::fetchSpaces,
-                            fetchSpaceContents = repository::fetchSpaceContents,
-                            fetchFolderViews = repository::fetchFolderViews,
-                            fetchListViews = repository::fetchListViews,
-                            previewViewTasksSource = repository::previewViewTasks,
-                            previewListTasksSource = repository::previewListTasks,
-                        ),
+        val widgetIdCapture = appWidgetId
+        lifecycleScope.launch {
+            val config = withContext(Dispatchers.IO) {
+                val securePrefs = SecurePreferences(this@WidgetConfigActivity)
+                val taskStorage = TaskStorage(this@WidgetConfigActivity, widgetIdCapture)
+                val savedSource = securePrefs.tasksSource(widgetIdCapture)
+                val savedLabel = taskStorage.loadTasksSourceName()
+                val initialTasksSource = if (savedSource != null && savedLabel != null) {
+                    SelectedTasksSource(
+                        id = savedSource.id,
+                        label = savedLabel,
+                        isListTasksSource = savedSource is StoredTasksSource.List,
                     )
+                } else null
+                InitialConfig(
+                    repository = CUViewRepository(this@WidgetConfigActivity, securePrefs),
+                    initialTasksSource = initialTasksSource,
+                    initialTasks = if (initialTasksSource != null) taskStorage.loadTasks() else null,
+                    initialThemeId = taskStorage.loadThemeId(),
+                )
+            }
+
+            setContent {
+                MaterialTheme {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        ConfigScreen(
+                            tokenCheckSignal = tokenCheckSignal,
+                            initialThemeId = config.initialThemeId,
+                            initialTasksSource = config.initialTasksSource,
+                            initialTasks = config.initialTasks,
+                            onSave = ::onConfigSaved,
+                            callbacks = RepositoryCallbacks(
+                                fetchSpaces = config.repository::fetchSpaces,
+                                fetchSpaceContents = config.repository::fetchSpaceContents,
+                                fetchFolderViews = config.repository::fetchFolderViews,
+                                fetchListViews = config.repository::fetchListViews,
+                                previewViewTasksSource = config.repository::previewViewTasks,
+                                previewListTasksSource = config.repository::previewListTasks,
+                            ),
+                        )
+                    }
                 }
             }
         }
@@ -135,3 +147,10 @@ class WidgetConfigActivity : ComponentActivity() {
         }
     }
 }
+
+private data class InitialConfig(
+    val repository: CUViewRepository,
+    val initialTasksSource: SelectedTasksSource?,
+    val initialTasks: List<CUTask>?,
+    val initialThemeId: String?,
+)
