@@ -40,14 +40,15 @@ import kotlinx.coroutines.withContext
  * - [setResult] with [RESULT_OK] is called in [onConfigSaved] after the user selects a tasks
  *   source and taps Save. This signals Android to finalize widget placement.
  *
- * [tokenCheckSignal] is incremented in [onResume] so the config screen re-reads the token
- * each time the user returns from [io.github.raven_wing.cuview.ui.main.MainActivity]
- * after connecting their ClickUp account.
+ * [apiToken] and [isCheckingToken] are updated in [onResume] so the config screen reflects
+ * the current token state each time the user returns from
+ * [io.github.raven_wing.cuview.ui.main.MainActivity] after connecting their ClickUp account.
  */
 class WidgetConfigActivity : ComponentActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private var tokenCheckSignal by mutableStateOf(0)
+    private var apiToken by mutableStateOf<String?>(null)
+    private var isCheckingToken by mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +84,8 @@ class WidgetConfigActivity : ComponentActivity() {
                 MaterialTheme {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         ConfigScreen(
-                            tokenCheckSignal = tokenCheckSignal,
+                            apiToken = apiToken,
+                            isCheckingToken = isCheckingToken,
                             initialThemeId = config.initialThemeId,
                             initialTasksSource = config.initialTasksSource,
                             initialTasks = config.initialTasks,
@@ -104,7 +106,10 @@ class WidgetConfigActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        tokenCheckSignal++
+        lifecycleScope.launch {
+            apiToken = withContext(Dispatchers.IO) { SecurePreferences(this@WidgetConfigActivity).apiToken }
+            isCheckingToken = false
+        }
     }
 
     private fun onConfigSaved(

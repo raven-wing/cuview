@@ -33,12 +33,9 @@ import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.CUView
 import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.repository.SpaceContents
-import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.ui.main.MainActivity
 import io.github.raven_wing.cuview.widget.WidgetTheme
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 // ── Repository callbacks ──────────────────────────────────────────────────────
 
@@ -87,7 +84,8 @@ internal sealed class PreviewState {
 
 @Composable
 internal fun ConfigScreen(
-    tokenCheckSignal: Int,
+    apiToken: String?,
+    isCheckingToken: Boolean,
     initialThemeId: String?,
     initialTasksSource: TasksSource? = null,
     initialTasks: List<CUTask>? = null,
@@ -96,15 +94,6 @@ internal fun ConfigScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    var apiToken by remember { mutableStateOf<String?>(null) }
-    var isCheckingToken by remember { mutableStateOf(true) }
-
-    LaunchedEffect(tokenCheckSignal) {
-        val token = withContext(Dispatchers.IO) { SecurePreferences(context).apiToken }
-        apiToken = token
-        isCheckingToken = false
-    }
 
     var navLevel by remember { mutableStateOf<NavLevel>(NavLevel.Root) }
     var spacesState by remember { mutableStateOf<LoadState<List<CUSpace>>?>(null) }
