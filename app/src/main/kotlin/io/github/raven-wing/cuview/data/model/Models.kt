@@ -3,9 +3,9 @@ package io.github.raven_wing.cuview.data.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-sealed class TasksSource(val id: String, val label: String) {
-    class View(id: String, label: String) : TasksSource(id, label)
-    class List(id: String, label: String) : TasksSource(id, label)
+sealed class TasksSource(open val id: String, open val label: String) {
+    data class View(override val id: String, override val label: String) : TasksSource(id, label)
+    data class List(override val id: String, override val label: String) : TasksSource(id, label)
 }
 
 @Serializable

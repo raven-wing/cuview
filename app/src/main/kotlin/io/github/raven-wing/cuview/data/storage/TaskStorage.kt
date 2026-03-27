@@ -96,10 +96,11 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
     fun loadTasksSource(): TasksSource? {
         val typeId = prefs.getString(keyTasksSourceTypeId, null) ?: return null
         val label = prefs.getString(keyTasksSourceLabel, null) ?: return null
-        return if (typeId.startsWith("list:"))
-            TasksSource.List(typeId.removePrefix("list:"), label)
-        else
-            TasksSource.View(typeId.removePrefix("view:"), label)
+        return when {
+            typeId.startsWith("list:") -> TasksSource.List(typeId.removePrefix("list:"), label)
+            typeId.startsWith("view:") -> TasksSource.View(typeId.removePrefix("view:"), label)
+            else -> null
+        }
     }
 
     fun saveThemeId(themeId: String) {

@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
  * [baseUrl] is overridable in tests to point at a [okhttp3.mockwebserver.MockWebServer].
  */
 class CUViewApiService(
-    val token: String,
+    private val token: String,
     private val baseUrl: String = "https://api.clickup.com/api/v2",
 ) : CUViewApi {
 

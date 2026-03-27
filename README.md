@@ -13,7 +13,7 @@ An Android home screen widget that displays your [ClickUp](https://clickup.com) 
 
 ## Screenshots
 
-_TODO: add widget and config screen screenshots_
+_Screenshots coming soon._
 
 ## Requirements
 
@@ -96,4 +96,4 @@ make e2e-fast   # run all flows without rebuilding or clearing state
 
 ## License
 
-_TODO_
+MIT License

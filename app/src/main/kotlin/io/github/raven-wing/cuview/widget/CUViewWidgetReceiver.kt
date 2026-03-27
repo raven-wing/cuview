@@ -6,6 +6,9 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import io.github.raven_wing.cuview.data.repository.CUViewRepository
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import io.github.raven_wing.cuview.worker.TaskSyncWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Entry point for Android's AppWidget system.
@@ -35,9 +38,18 @@ class CUViewWidgetReceiver : GlanceAppWidgetReceiver() {
         // Called on reboot / periodic system refresh — sync each widget individually.
         // Skip widgets that haven't been configured yet (e.g. onUpdate fires during the
         // WidgetConfigActivity flow before the user saves their selection).
-        appWidgetIds.forEach { widgetId ->
-            if (CUViewRepository(context).isConfigured(widgetId)) {
-                TaskSyncWorker.enqueueImmediateSync(context, widgetId)
+        // Use goAsync() to avoid blocking the main thread with SecurePreferences key
+        // derivation (~100ms) triggered by isConfigured().
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                appWidgetIds.forEach { widgetId ->
+                    if (CUViewRepository(context).isConfigured(widgetId)) {
+                        TaskSyncWorker.enqueueImmediateSync(context, widgetId)
+                    }
+                }
+            } finally {
+                pendingResult.finish()
             }
         }
     }

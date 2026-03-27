@@ -10,3 +10,6 @@ app/release/
 *~
 distribution/fdroid-metadata-reference.yml
 worker/.wrangler/
+*.hprof
+captures/
+*.DS_Store

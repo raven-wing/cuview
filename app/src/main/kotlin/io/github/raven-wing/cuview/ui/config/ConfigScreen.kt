@@ -94,11 +94,10 @@ internal sealed class PreviewState {
 
 @Composable
 internal fun ConfigScreen(
-    apiToken: String?,
-    isCheckingToken: Boolean,
+    tokenState: TokenState,
     pendingOAuthResult: OAuthResult?,
     onOAuthResultConsumed: () -> Unit,
-    onTokenChanged: (String?) -> Unit,
+    onTokenChanged: (TokenState) -> Unit,
     initialThemeId: String?,
     initialTasksSource: TasksSource? = null,
     initialTasks: List<CUTask>? = null,
@@ -128,14 +127,14 @@ internal fun ConfigScreen(
         // Token is already saved by WidgetConfigActivity.handleOAuthIntent / handleOAuthCallback.
         // This effect only needs to update UI state.
         when (result) {
-            is OAuthResult.Success -> { onTokenChanged(result.token); oauthError = null }
+            is OAuthResult.Success -> { onTokenChanged(TokenState.Token(result.token)); oauthError = null }
             is OAuthResult.Failure -> oauthError = result.error
         }
         onOAuthResultConsumed()
     }
 
-    LaunchedEffect(apiToken) {
-        if (apiToken == null) {
+    LaunchedEffect(tokenState) {
+        if (tokenState is TokenState.None) {
             navLevel = NavLevel.Root
             spacesState = null
             spaceContentsState = null
@@ -146,13 +145,17 @@ internal fun ConfigScreen(
         }
     }
 
-    // Keyed on both selectedTasksSource and apiToken: when editing, the tasks source is pre-set
+    // Keyed on both selectedTasksSource and tokenState: when editing, the tasks source is pre-set
     // but the token loads asynchronously, so we need to re-run the preview once the token is available.
-    LaunchedEffect(selectedTasksSource, apiToken) {
-        val tasksSource = selectedTasksSource ?: run { previewState = PreviewState.Idle; return@LaunchedEffect }
-        val token = apiToken ?: return@LaunchedEffect
+    LaunchedEffect(selectedTasksSource, tokenState) {
+        if (selectedTasksSource == null) {
+            previewState = PreviewState.Idle
+            return@LaunchedEffect
+        }
+        val tasksSource = selectedTasksSource ?: return@LaunchedEffect
+        val token = (tokenState as? TokenState.Token)?.value ?: return@LaunchedEffect
         previewState = PreviewState.Loading
-        val result = callbacks.previewTasksSource(tasksSource, token.trim())
+        val result = callbacks.previewTasksSource(tasksSource, token)
         previewState = result.fold(
             onSuccess = { PreviewState.Loaded(it) },
             onFailure = { PreviewState.Error(it.message ?: "Failed to load tasks") },
@@ -168,19 +171,19 @@ internal fun ConfigScreen(
         Text(stringResource(R.string.config_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(24.dp))
 
-        when {
-            isCheckingToken -> {
+        when (tokenState) {
+            is TokenState.Loading -> {
                 CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
             }
             else -> {
                 ConnectSection(
-                    apiToken = apiToken,
+                    apiToken = if (tokenState is TokenState.Token) tokenState.value else null,
                     oauthError = oauthError,
                     onConnect = {
                         if (BuildConfig.USE_MOCK_API) {
                             scope.launch {
                                 withContext(Dispatchers.IO) { SecurePreferences(context).apiToken = "mock_token" }
-                                onTokenChanged("mock_token")
+                                onTokenChanged(TokenState.Token("mock_token"))
                             }
                         } else {
                             val state = UUID.randomUUID().toString()
@@ -207,12 +210,12 @@ internal fun ConfigScreen(
                     },
                     onDisconnect = {
                         scope.launch(Dispatchers.IO) { SecurePreferences(context).apiToken = null }
-                        onTokenChanged(null)
+                        onTokenChanged(TokenState.None)
                     },
                 )
 
-                if (apiToken != null) {
-                    val token = apiToken.trim()
+                if (tokenState is TokenState.Token) {
+                    val token = tokenState.value
                     Spacer(Modifier.height(12.dp))
 
                     when (val level = navLevel) {

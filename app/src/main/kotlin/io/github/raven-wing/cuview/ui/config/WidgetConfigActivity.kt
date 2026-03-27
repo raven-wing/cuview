@@ -40,6 +40,14 @@ sealed class OAuthResult {
     data class Failure(val error: String) : OAuthResult()
 }
 
+// ── Token state ────────────────────────────────────────────────────────────────
+
+sealed class TokenState {
+    data object Loading : TokenState()
+    data object None : TokenState()
+    data class Token(val value: String) : TokenState()
+}
+
 // ── Activity ───────────────────────────────────────────────────────────────────
 
 /**
@@ -69,8 +77,7 @@ sealed class OAuthResult {
 class WidgetConfigActivity : ComponentActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private var apiToken by mutableStateOf<String?>(null)
-    private var isCheckingToken by mutableStateOf(true)
+    private var tokenState by mutableStateOf<TokenState>(TokenState.Loading)
     var pendingOAuthResult by mutableStateOf<OAuthResult?>(null)
         private set
 
@@ -121,11 +128,10 @@ class WidgetConfigActivity : ComponentActivity() {
                 MaterialTheme {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         ConfigScreen(
-                            apiToken = apiToken,
-                            isCheckingToken = isCheckingToken,
+                            tokenState = tokenState,
                             pendingOAuthResult = pendingOAuthResult,
                             onOAuthResultConsumed = { pendingOAuthResult = null },
-                            onTokenChanged = { apiToken = it },
+                            onTokenChanged = { tokenState = it },
                             initialThemeId = initialThemeId,
                             initialTasksSource = initialTasksSource,
                             initialTasks = initialTasks,
@@ -148,8 +154,7 @@ class WidgetConfigActivity : ComponentActivity() {
         super.onResume()
         lifecycleScope.launch {
             val token = withContext(Dispatchers.IO) { SecurePreferences(this@WidgetConfigActivity).apiToken }
-            apiToken = token
-            isCheckingToken = false
+            tokenState = if (token != null) TokenState.Token(token) else TokenState.None
             // Pick up an OAuth error stored by a fresh-instance callback that ran in a separate task.
             val pendingError = withContext(Dispatchers.IO) {
                 getSharedPreferences(PREFS_OAUTH_PENDING_ERROR, MODE_PRIVATE)
@@ -179,12 +184,17 @@ class WidgetConfigActivity : ComponentActivity() {
         if (expectedState == null || expectedState != uri.getQueryParameter("state")) return
 
         val result = parseOAuthCallback(uri) ?: return
-        // Save token immediately so it's persisted even if the process is killed before
-        // ConfigScreen's LaunchedEffect runs.
-        if (result is OAuthResult.Success) {
-            lifecycleScope.launch(Dispatchers.IO) { SecurePreferences(this@WidgetConfigActivity).apiToken = result.token }
+        // Save token on IO and await before updating pendingOAuthResult, so the token is
+        // persisted even if the process is killed between the save and the UI update.
+        lifecycleScope.launch {
+            if (result is OAuthResult.Success) {
+                withContext(Dispatchers.IO) {
+                    try { SecurePreferences(this@WidgetConfigActivity).apiToken = result.token.trim() }
+                    catch (_: Exception) { /* Persist failure (e.g. Keystore unavailable) — UI still updates */ }
+                }
+            }
+            pendingOAuthResult = result
         }
-        pendingOAuthResult = result
     }
 
     /**
@@ -199,7 +209,7 @@ class WidgetConfigActivity : ComponentActivity() {
         oauthStatePrefs.edit().remove(KEY_PENDING_STATE).apply()
         if (expectedState == null || expectedState != uri.getQueryParameter("state")) return
         when (val result = parseOAuthCallback(uri) ?: return) {
-            is OAuthResult.Success -> SecurePreferences(this).apiToken = result.token
+            is OAuthResult.Success -> SecurePreferences(this).apiToken = result.token.trim()
             is OAuthResult.Failure -> getSharedPreferences(PREFS_OAUTH_PENDING_ERROR, MODE_PRIVATE)
                 .edit().putString(KEY_PENDING_ERROR, result.error).apply()
         }

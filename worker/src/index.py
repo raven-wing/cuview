@@ -31,6 +31,9 @@ async def on_fetch(request, env):
     import js
     url = js.URL.new(request.url)
 
+    if request.method != "GET":
+        return js.Response.new("Method Not Allowed", status=405)
+
     # ClickUp strips path segments from the registered redirect URI, so it delivers
     # the code to the root path. Accept both "/" and "/callback".
     if url.pathname not in ("/", "/callback"):
@@ -59,6 +62,12 @@ async def on_fetch(request, env):
             js.Object.fromEntries(to_js([("headers", html_headers)])),
         )
 
+    if code and (len(code) > 512 or not all(c.isalnum() or c in '-_.' for c in code)):
+        return js.Response.new(
+            build_deep_link_html(build_intent_url(f"error=invalid_code&state={state}")),
+            js.Object.fromEntries(to_js([("headers", html_headers)])),
+        )
+
     try:
         headers = js.Headers.new()
         headers.set("Content-Type", "application/json")
@@ -71,6 +80,7 @@ async def on_fetch(request, env):
         resp = await js.fetch("https://api.clickup.com/api/v2/oauth/token", init)
 
         if not resp.ok:
+            js.console.error(f"ClickUp token exchange failed: HTTP {resp.status}")
             return js.Response.new(
                 build_deep_link_html(build_intent_url(f"error=token_exchange_failed&state={state}")),
                 js.Object.fromEntries(to_js([("headers", html_headers)])),
