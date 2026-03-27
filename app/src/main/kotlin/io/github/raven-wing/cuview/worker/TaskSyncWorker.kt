@@ -22,7 +22,7 @@ import androidx.work.workDataOf
 import io.github.raven_wing.cuview.data.repository.CUViewRepository
 import io.github.raven_wing.cuview.data.storage.TaskStorage
 import io.github.raven_wing.cuview.widget.CUViewWidget
-import io.github.raven_wing.cuview.widget.CUViewWidget.Companion.REFRESH_KEY
+import io.github.raven_wing.cuview.widget.CUViewWidget.Companion.LAST_SYNCED_KEY
 import java.util.concurrent.TimeUnit
 
 /**
@@ -100,7 +100,7 @@ class TaskSyncWorker(
         if (glanceId != null) {
             updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
                 prefs.toMutablePreferences().apply {
-                    this[REFRESH_KEY] = (this[REFRESH_KEY] ?: 0) + 1
+                    this[LAST_SYNCED_KEY] = System.currentTimeMillis()
                 }
             }
         }

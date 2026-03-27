@@ -41,7 +41,6 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
 
     private val keyTasksJson = "tasks_json_$widgetId"
     private val keyLastError = "last_error_$widgetId"
-    private val keyLastUpdatedMs = "last_updated_ms_$widgetId"
     private val keyIsSyncing = "is_syncing_$widgetId"
     private val keySyncStartMs = "sync_start_ms_$widgetId"
     private val keyTasksSourceTypeId = "tasks_source_type_id_$widgetId"
@@ -49,10 +48,7 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
     private val keyThemeId = "theme_id_$widgetId"
 
     fun saveTasks(tasks: List<CUTask>) {
-        prefs.edit()
-            .putString(keyTasksJson, Json.encodeToString(tasks))
-            .putLong(keyLastUpdatedMs, System.currentTimeMillis())
-            .apply()
+        prefs.edit().putString(keyTasksJson, Json.encodeToString(tasks)).apply()
     }
 
     fun loadTasks(): List<CUTask> {
@@ -73,8 +69,6 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
     }
 
     fun loadError(): String? = prefs.getString(keyLastError, null)
-
-    fun loadLastUpdatedMs(): Long = prefs.getLong(keyLastUpdatedMs, 0L)
 
     fun setSyncing(syncing: Boolean) {
         prefs.edit().putBoolean(keyIsSyncing, syncing).apply()
@@ -118,7 +112,6 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
         prefs.edit()
             .remove(keyTasksJson)
             .remove(keyLastError)
-            .remove(keyLastUpdatedMs)
             .remove(keyIsSyncing)
             .remove(keySyncStartMs)
             .remove(keyTasksSourceTypeId)

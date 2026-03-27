@@ -128,7 +128,7 @@ class WidgetConfigActivity : ComponentActivity() {
         lifecycleScope.launch {
             GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(widgetIdCapture)?.let { glanceId ->
                 updateAppWidgetState(this@WidgetConfigActivity, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-                    prefs.toMutablePreferences().apply { this[CUViewWidget.REFRESH_KEY] = (this[CUViewWidget.REFRESH_KEY] ?: 0) + 1 }
+                    prefs.toMutablePreferences().apply { this[CUViewWidget.LAST_SYNCED_KEY] = System.currentTimeMillis() }
                 }
                 CUViewWidget().update(this@WidgetConfigActivity, glanceId)
             }

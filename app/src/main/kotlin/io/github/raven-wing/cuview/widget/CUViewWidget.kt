@@ -6,7 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.currentState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import io.github.raven_wing.cuview.BuildConfig
@@ -371,6 +371,6 @@ class CUViewWidget : GlanceAppWidget() {
         private const val SYNC_STALE_THRESHOLD_MS = 30 * 60 * 1000L
         // Shared key used by TaskSyncWorker and WidgetConfigActivity to bump Glance's DataStore
         // state and trigger a re-render. Both must reference this constant — never inline "refresh".
-        internal val REFRESH_KEY = intPreferencesKey("refresh")
+        internal val LAST_SYNCED_KEY = longPreferencesKey("last_synced_ms")
     }
 }
