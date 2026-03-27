@@ -9,3 +9,4 @@ app/release/
 .kotlin/
 *~
 distribution/fdroid-metadata-reference.yml
+worker/.wrangler/
