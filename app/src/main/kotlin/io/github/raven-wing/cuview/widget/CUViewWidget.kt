@@ -70,19 +70,8 @@ class CUViewWidget : GlanceAppWidget() {
         if (BuildConfig.DEBUG) Log.d("CUViewWidget", "provideGlance: ENTRY id=$id")
         val widgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
         val taskStorage = TaskStorage(context, widgetId)
-        // Warm up EncryptedSharedPreferences (lazy init, ~100 ms) before entering
-        // the composition thread. Reads inside provideContent {} will be fast in-memory lookups.
-        taskStorage.loadTasks()
 
-        // Escape hatch: if the isSyncing flag was set but the WorkManager process was killed
-        // before it could clear the flag, the widget would show "Updating…" forever. Clear it
-        // here, before provideContent {}, to avoid writing to SharedPreferences inside the
-        // composition lambda (a side effect that violates composable purity expectations).
-        val isSyncingRaw = taskStorage.isSyncing()
-        val syncStartMs = taskStorage.loadSyncStartMs()
-        val syncIsStale = isSyncingRaw && syncStartMs > 0 &&
-            (System.currentTimeMillis() - syncStartMs) > SYNC_STALE_THRESHOLD_MS
-        if (syncIsStale) taskStorage.setSyncing(false)
+        taskStorage.clearSyncingIfStale(SYNC_STALE_THRESHOLD_MS)
 
         val colors = WidgetTheme.fromId(taskStorage.loadThemeId()).colors.toWidgetColors()
 

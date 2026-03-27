@@ -88,6 +88,12 @@ class TaskStorage(private val prefs: SharedPreferences, widgetId: Int) {
 
     fun loadSyncStartMs(): Long = prefs.getLong(keySyncStartMs, 0L)
 
+    fun clearSyncingIfStale(thresholdMs: Long) {
+        val startMs = loadSyncStartMs()
+        if (isSyncing() && startMs > 0 && System.currentTimeMillis() - startMs > thresholdMs)
+            setSyncing(false)
+    }
+
     fun saveTasksSource(source: TasksSource) = when (source) {
         is TasksSource.List -> prefs.edit().putString(keyTasksSourceTypeId, "list:${source.id}").putString(keyTasksSourceLabel, source.label).apply()
         is TasksSource.View -> prefs.edit().putString(keyTasksSourceTypeId, "view:${source.id}").putString(keyTasksSourceLabel, source.label).apply()
