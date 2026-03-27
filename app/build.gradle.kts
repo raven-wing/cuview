@@ -55,7 +55,10 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("Boolean", "USE_MOCK_API", "true")
+            val useMock = System.getenv("USE_MOCK_API")
+                ?: localProps["use.mock.api"] as String?
+                ?: "true"
+            buildConfigField("Boolean", "USE_MOCK_API", useMock)
         }
         release {
             isMinifyEnabled = true

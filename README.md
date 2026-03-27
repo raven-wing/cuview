@@ -34,11 +34,12 @@ To reconfigure, long-press the widget and select **Edit Widget** (launcher-depen
 Gradle requires **JDK 21** — JDK 17 and JDK 25 are not supported.
 
 ```bash
-./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+make install                     # debug build with mock API (no real ClickUp calls)
+USE_MOCK_API=false make install  # debug build with real ClickUp API
+make build-release               # release build (requires keystore in local.properties)
 ```
 
-The debug build uses `USE_MOCK_API=true`, which serves fake tasks without requiring real OAuth credentials.
+The debug build defaults to `USE_MOCK_API=true`, which serves fake tasks without requiring real OAuth credentials. Use `USE_MOCK_API=false` to test the real OAuth and sync flow.
 
 ### Module layout
 

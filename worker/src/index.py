@@ -1,5 +1,6 @@
 import json
 from urllib.parse import quote
+from pyodide.ffi import to_js
 
 # intent:// URLs are Chrome's guaranteed mechanism for firing Android intents from a
 # browser tab. Custom scheme navigation (cuview://) is unreliable from Custom Tabs.
@@ -41,57 +42,56 @@ async def on_fetch(request, env):
     raw_state = url.searchParams.get("state")
     state = quote(raw_state or "", safe="")
 
-    html_headers = {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, max-age=0",
-        "Pragma": "no-cache",
-    }
+    html_headers = js.Headers.new()
+    html_headers.set("Content-Type", "text/html; charset=utf-8")
+    html_headers.set("Cache-Control", "no-store, max-age=0")
+    html_headers.set("Pragma", "no-cache")
 
     if not raw_state:
         return js.Response.new(
             build_deep_link_html(build_intent_url("error=missing_state")),
-            headers=html_headers,
+            js.Object.fromEntries(to_js([("headers", html_headers)])),
         )
 
     if not code:
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"error=missing_code&state={state}")),
-            headers=html_headers,
+            js.Object.fromEntries(to_js([("headers", html_headers)])),
         )
 
     try:
-        resp = await js.fetch(
-            "https://api.clickup.com/api/v2/oauth/token",
-            method="POST",
-            headers={"Content-Type": "application/json"},
-            body=json.dumps({
-                "client_id": env.CLICKUP_CLIENT_ID,
-                "client_secret": env.CLICKUP_CLIENT_SECRET,
-                "code": code,
-            }),
-        )
+        headers = js.Headers.new()
+        headers.set("Content-Type", "application/json")
+        body = json.dumps({
+            "client_id": env.CLICKUP_CLIENT_ID,
+            "client_secret": env.CLICKUP_CLIENT_SECRET,
+            "code": code,
+        })
+        init = js.Object.fromEntries(to_js([("method", "POST"), ("headers", headers), ("body", body)]))
+        resp = await js.fetch("https://api.clickup.com/api/v2/oauth/token", init)
 
         if not resp.ok:
             return js.Response.new(
                 build_deep_link_html(build_intent_url(f"error=token_exchange_failed&state={state}")),
-                headers=html_headers,
+                js.Object.fromEntries(to_js([("headers", html_headers)])),
             )
 
-        data = await resp.json()
-        access_token = getattr(data, "access_token", None)
+        text = await resp.text()
+        data = json.loads(text)
+        access_token = data.get("access_token")
         if not access_token:
             return js.Response.new(
                 build_deep_link_html(build_intent_url(f"error=token_exchange_failed&state={state}")),
-                headers=html_headers,
+                js.Object.fromEntries(to_js([("headers", html_headers)])),
             )
         token = quote(access_token, safe="")
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"token={token}&state={state}")),
-            headers=html_headers,
+            js.Object.fromEntries(to_js([("headers", html_headers)])),
         )
 
     except Exception:
         return js.Response.new(
             build_deep_link_html(build_intent_url(f"error=network_error&state={state}")),
-            headers=html_headers,
+            js.Object.fromEntries(to_js([("headers", html_headers)])),
         )

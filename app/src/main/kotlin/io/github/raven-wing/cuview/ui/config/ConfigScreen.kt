@@ -1,7 +1,12 @@
 package io.github.raven_wing.cuview.ui.config
 
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,10 +26,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.raven_wing.cuview.BuildConfig
 import io.github.raven_wing.cuview.R
 import io.github.raven_wing.cuview.data.model.CUFolder
 import io.github.raven_wing.cuview.data.model.CUList
@@ -33,9 +40,12 @@ import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.CUView
 import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.repository.SpaceContents
-import io.github.raven_wing.cuview.ui.connect.ConnectActivity
+import io.github.raven_wing.cuview.data.storage.SecurePreferences
 import io.github.raven_wing.cuview.widget.WidgetTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 // ── Repository callbacks ──────────────────────────────────────────────────────
 
@@ -86,6 +96,9 @@ internal sealed class PreviewState {
 internal fun ConfigScreen(
     apiToken: String?,
     isCheckingToken: Boolean,
+    pendingOAuthResult: OAuthResult?,
+    onOAuthResultConsumed: () -> Unit,
+    onTokenChanged: (String?) -> Unit,
     initialThemeId: String?,
     initialTasksSource: TasksSource? = null,
     initialTasks: List<CUTask>? = null,
@@ -108,6 +121,30 @@ internal fun ConfigScreen(
         )
     }
     var selectedTheme by remember { mutableStateOf(WidgetTheme.fromId(initialThemeId)) }
+    var oauthError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(pendingOAuthResult) {
+        val result = pendingOAuthResult ?: return@LaunchedEffect
+        // Token is already saved by WidgetConfigActivity.handleOAuthIntent / handleOAuthCallback.
+        // This effect only needs to update UI state.
+        when (result) {
+            is OAuthResult.Success -> { onTokenChanged(result.token); oauthError = null }
+            is OAuthResult.Failure -> oauthError = result.error
+        }
+        onOAuthResultConsumed()
+    }
+
+    LaunchedEffect(apiToken) {
+        if (apiToken == null) {
+            navLevel = NavLevel.Root
+            spacesState = null
+            spaceContentsState = null
+            folderViewsState = null
+            listViewsState = null
+            selectedTasksSource = null
+            previewState = PreviewState.Idle
+        }
+    }
 
     // Keyed on both selectedTasksSource and apiToken: when editing, the tasks source is pre-set
     // but the token loads asynchronously, so we need to re-run the preview once the token is available.
@@ -135,166 +172,231 @@ internal fun ConfigScreen(
             isCheckingToken -> {
                 CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
             }
-
-            apiToken == null -> {
-                Text(
-                    text = stringResource(R.string.config_not_connected_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            else -> {
+                ConnectSection(
+                    apiToken = apiToken,
+                    oauthError = oauthError,
+                    onConnect = {
+                        if (BuildConfig.USE_MOCK_API) {
+                            scope.launch {
+                                withContext(Dispatchers.IO) { SecurePreferences(context).apiToken = "mock_token" }
+                                onTokenChanged("mock_token")
+                            }
+                        } else {
+                            val state = UUID.randomUUID().toString()
+                            // Persist state before launching the CCT so handleOAuthIntent can
+                            // validate it even if the process is recreated between launch and callback.
+                            context.getSharedPreferences(WidgetConfigActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
+                                .edit().putString(WidgetConfigActivity.KEY_PENDING_STATE, state).apply()
+                            val redirectUri = Uri.encode(BuildConfig.CLOUDFLARE_WORKER_URL)
+                            val authUrl = "https://app.clickup.com/api" +
+                                "?client_id=${BuildConfig.CLICKUP_CLIENT_ID}" +
+                                "&redirect_uri=$redirectUri" +
+                                "&state=$state"
+                            // FLAG_ACTIVITY_NEW_TASK opens Chrome in its own task, keeping
+                            // WidgetConfigActivity alone at the top of the io.github.raven_wing.cuview task.
+                            // When the Cloudflare Worker fires the intent:// callback with
+                            // launchFlags=NEW_TASK|SINGLE_TOP, Android finds this task, sees
+                            // WidgetConfigActivity at the top, and routes the callback via onNewIntent.
+                            // Without this flag, ChromeCCT would share WidgetConfigActivity's task, and
+                            // SINGLE_TOP would never match (ChromeCCT is on top, not WidgetConfigActivity).
+                            val cct = CustomTabsIntent.Builder().build()
+                            cct.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            cct.launchUrl(context, Uri.parse(authUrl))
+                        }
+                    },
+                    onDisconnect = {
+                        scope.launch(Dispatchers.IO) { SecurePreferences(context).apiToken = null }
+                        onTokenChanged(null)
+                    },
                 )
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        context.startActivity(
-                            Intent(context, ConnectActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                if (apiToken != null) {
+                    val token = apiToken.trim()
+                    Spacer(Modifier.height(12.dp))
+
+                    when (val level = navLevel) {
+                        is NavLevel.Root -> SpaceListLevel(
+                            spacesState = spacesState,
+                            onBrowse = {
+                                spacesState = LoadState.Loading
+                                spaceContentsState = null
+                                folderViewsState = null
+                                listViewsState = null
+                                selectedTasksSource = null
+                                scope.launch {
+                                    spacesState = callbacks.fetchSpaces(token).toLoadState("Failed to load spaces")
+                                }
+                            },
+                            onSpaceClick = { space ->
+                                navLevel = NavLevel.SpaceContents(space)
+                                spaceContentsState = LoadState.Loading
+                                folderViewsState = null
+                                listViewsState = null
+                                selectedTasksSource = null
+                                scope.launch {
+                                    val result = callbacks.fetchSpaceContents(space.id, token)
+                                    if (navLevel != NavLevel.SpaceContents(space)) return@launch
+                                    spaceContentsState = result.toLoadState("Failed to load space")
+                                }
                             },
                         )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.config_open_app_button))
-                }
-            }
 
-            else -> {
-                val token = apiToken!!.trim()
-                Spacer(Modifier.height(12.dp))
+                        is NavLevel.SpaceContents -> SpaceContentsLevel(
+                            space = level.space,
+                            contentsState = spaceContentsState,
+                            selectedTasksSource = selectedTasksSource,
+                            onBack = {
+                                navLevel = NavLevel.Root
+                                spaceContentsState = null
+                                selectedTasksSource = null
+                            },
+                            onViewClick = { view ->
+                                previewState = PreviewState.Loading
+                                selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, view.name))
+                            },
+                            onFolderClick = { folder ->
+                                navLevel = NavLevel.FolderContents(level.space, folder)
+                                folderViewsState = LoadState.Loading
+                                listViewsState = null
+                                selectedTasksSource = null
+                                scope.launch {
+                                    val result = callbacks.fetchFolderViews(folder.id, token)
+                                    if (navLevel != NavLevel.FolderContents(level.space, folder)) return@launch
+                                    folderViewsState = result.toLoadState("Failed to load folder views")
+                                }
+                            },
+                            onListClick = { list ->
+                                navLevel = NavLevel.ListSelection(level.space, null, list)
+                                listViewsState = LoadState.Loading
+                                selectedTasksSource = null
+                                scope.launch {
+                                    val result = callbacks.fetchListViews(list.id, token)
+                                    if (navLevel != NavLevel.ListSelection(level.space, null, list)) return@launch
+                                    listViewsState = result.toLoadState("Failed to load list views")
+                                }
+                            },
+                        )
 
-                when (val level = navLevel) {
-                    is NavLevel.Root -> SpaceListLevel(
-                        spacesState = spacesState,
-                        onBrowse = {
-                            spacesState = LoadState.Loading
-                            spaceContentsState = null
-                            folderViewsState = null
-                            listViewsState = null
-                            selectedTasksSource = null
-                            scope.launch {
-                                spacesState = callbacks.fetchSpaces(token).toLoadState("Failed to load spaces")
-                            }
-                        },
-                        onSpaceClick = { space ->
-                            navLevel = NavLevel.SpaceContents(space)
-                            spaceContentsState = LoadState.Loading
-                            folderViewsState = null
-                            listViewsState = null
-                            selectedTasksSource = null
-                            scope.launch {
-                                val result = callbacks.fetchSpaceContents(space.id, token)
-                                if (navLevel != NavLevel.SpaceContents(space)) return@launch
-                                spaceContentsState = result.toLoadState("Failed to load space")
-                            }
-                        },
+                        is NavLevel.FolderContents -> FolderContentsLevel(
+                            space = level.space,
+                            folder = level.folder,
+                            viewsState = folderViewsState,
+                            selectedTasksSource = selectedTasksSource,
+                            onBack = {
+                                navLevel = NavLevel.SpaceContents(level.space)
+                                folderViewsState = null
+                                selectedTasksSource = null
+                            },
+                            onViewClick = { view ->
+                                previewState = PreviewState.Loading
+                                selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, level.folder.name, view.name))
+                            },
+                            onListClick = { list ->
+                                navLevel = NavLevel.ListSelection(level.space, level.folder, list)
+                                listViewsState = LoadState.Loading
+                                selectedTasksSource = null
+                                scope.launch {
+                                    val result = callbacks.fetchListViews(list.id, token)
+                                    if (navLevel != NavLevel.ListSelection(level.space, level.folder, list)) return@launch
+                                    listViewsState = result.toLoadState("Failed to load list views")
+                                }
+                            },
+                        )
+
+                        is NavLevel.ListSelection -> ListSelectionLevel(
+                            space = level.space,
+                            folder = level.folder,
+                            list = level.list,
+                            viewsState = listViewsState,
+                            selectedTasksSource = selectedTasksSource,
+                            onBack = {
+                                navLevel = if (level.folder != null)
+                                    NavLevel.FolderContents(level.space, level.folder)
+                                else
+                                    NavLevel.SpaceContents(level.space)
+                                listViewsState = null
+                                selectedTasksSource = null
+                            },
+                            onTasksSourceClick = {
+                                previewState = PreviewState.Loading
+                                selectedTasksSource = it
+                            },
+                        )
+                    }
+
+                    PreviewSection(selectedTasksSource, previewState)
+
+                    Spacer(Modifier.height(20.dp))
+                    ThemePickerSection(
+                        selectedTheme = selectedTheme,
+                        onThemeChange = { selectedTheme = it },
                     )
 
-                    is NavLevel.SpaceContents -> SpaceContentsLevel(
-                        space = level.space,
-                        contentsState = spaceContentsState,
-                        selectedTasksSource = selectedTasksSource,
-                        onBack = {
-                            navLevel = NavLevel.Root
-                            spaceContentsState = null
-                            selectedTasksSource = null
+                    Spacer(Modifier.height(24.dp))
+                    val isEditing = initialTasksSource != null
+                    Button(
+                        onClick = {
+                            val tasksSource = selectedTasksSource ?: return@Button
+                            val tasks = (previewState as? PreviewState.Loaded)?.tasks ?: initialTasks ?: emptyList()
+                            onSave(tasksSource, tasks, selectedTheme)
                         },
-                        onViewClick = { view ->
-                            previewState = PreviewState.Loading
-                            selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, view.name))
-                        },
-                        onFolderClick = { folder ->
-                            navLevel = NavLevel.FolderContents(level.space, folder)
-                            folderViewsState = LoadState.Loading
-                            listViewsState = null
-                            selectedTasksSource = null
-                            scope.launch {
-                                val result = callbacks.fetchFolderViews(folder.id, token)
-                                if (navLevel != NavLevel.FolderContents(level.space, folder)) return@launch
-                                folderViewsState = result.toLoadState("Failed to load folder views")
-                            }
-                        },
-                        onListClick = { list ->
-                            navLevel = NavLevel.ListSelection(level.space, null, list)
-                            listViewsState = LoadState.Loading
-                            selectedTasksSource = null
-                            scope.launch {
-                                val result = callbacks.fetchListViews(list.id, token)
-                                if (navLevel != NavLevel.ListSelection(level.space, null, list)) return@launch
-                                listViewsState = result.toLoadState("Failed to load list views")
-                            }
-                        },
-                    )
-
-                    is NavLevel.FolderContents -> FolderContentsLevel(
-                        space = level.space,
-                        folder = level.folder,
-                        viewsState = folderViewsState,
-                        selectedTasksSource = selectedTasksSource,
-                        onBack = {
-                            navLevel = NavLevel.SpaceContents(level.space)
-                            folderViewsState = null
-                            selectedTasksSource = null
-                        },
-                        onViewClick = { view ->
-                            previewState = PreviewState.Loading
-                            selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, level.folder.name, view.name))
-                        },
-                        onListClick = { list ->
-                            navLevel = NavLevel.ListSelection(level.space, level.folder, list)
-                            listViewsState = LoadState.Loading
-                            selectedTasksSource = null
-                            scope.launch {
-                                val result = callbacks.fetchListViews(list.id, token)
-                                if (navLevel != NavLevel.ListSelection(level.space, level.folder, list)) return@launch
-                                listViewsState = result.toLoadState("Failed to load list views")
-                            }
-                        },
-                    )
-
-                    is NavLevel.ListSelection -> ListSelectionLevel(
-                        space = level.space,
-                        folder = level.folder,
-                        list = level.list,
-                        viewsState = listViewsState,
-                        selectedTasksSource = selectedTasksSource,
-                        onBack = {
-                            navLevel = if (level.folder != null)
-                                NavLevel.FolderContents(level.space, level.folder)
-                            else
-                                NavLevel.SpaceContents(level.space)
-                            listViewsState = null
-                            selectedTasksSource = null
-                        },
-                        onTasksSourceClick = {
-                            previewState = PreviewState.Loading
-                            selectedTasksSource = it
-                        },
-                    )
-                }
-
-                PreviewSection(selectedTasksSource, previewState)
-
-                Spacer(Modifier.height(20.dp))
-                ThemePickerSection(
-                    selectedTheme = selectedTheme,
-                    onThemeChange = { selectedTheme = it },
-                )
-
-                Spacer(Modifier.height(24.dp))
-                val isEditing = initialTasksSource != null
-                Button(
-                    onClick = {
-                        val tasksSource = selectedTasksSource ?: return@Button
-                        val tasks = (previewState as? PreviewState.Loaded)?.tasks ?: initialTasks ?: emptyList()
-                        onSave(tasksSource, tasks, selectedTheme)
-                    },
-                    // When editing, allow save with cached tasks even while the preview refreshes.
-                    enabled = selectedTasksSource != null &&
-                        (previewState is PreviewState.Loaded || (isEditing && previewState is PreviewState.Loading)),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(if (isEditing) R.string.config_update_button else R.string.config_save_button))
+                        // When editing, allow save with cached tasks even while the preview refreshes.
+                        enabled = selectedTasksSource != null &&
+                            (previewState is PreviewState.Loaded || (isEditing && previewState is PreviewState.Loading)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(if (isEditing) R.string.config_update_button else R.string.config_save_button))
+                    }
                 }
             }
         }
+    }
+}
+
+// ── Connect / disconnect section ───────────────────────────────────────────────
+
+@Composable
+private fun ConnectSection(
+    apiToken: String?,
+    oauthError: String?,
+    onConnect: () -> Unit,
+    onDisconnect: () -> Unit,
+) {
+    if (apiToken == null) {
+        Button(
+            onClick = onConnect,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.config_connect_button))
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.config_connected_label),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.config_disconnect_button),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .clickable(onClick = onDisconnect)
+                    .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+            )
+        }
+    }
+    if (oauthError != null) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = oauthError,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }

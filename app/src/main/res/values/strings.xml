@@ -23,7 +23,4 @@
     </plurals>
     <string name="config_preview_empty">No tasks in this view</string>
     <string name="config_preview_more">… and %d more</string>
-    <string name="config_not_connected_message">Connect to ClickUp in the CU View app first.</string>
-    <string name="config_open_app_button">Open CU View</string>
-    <string name="main_widget_instructions">Add the CU View widget from your home screen.</string>
 </resources>

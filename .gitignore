@@ -8,3 +8,4 @@ app/release/
 .local/
 .kotlin/
 *~
+distribution/fdroid-metadata-reference.yml
