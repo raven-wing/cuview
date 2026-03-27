@@ -42,7 +42,7 @@ import kotlinx.coroutines.withContext
  *
  * [apiToken] and [isCheckingToken] are updated in [onResume] so the config screen reflects
  * the current token state each time the user returns from
- * [io.github.raven_wing.cuview.ui.main.MainActivity] after connecting their ClickUp account.
+ * [io.github.raven_wing.cuview.ui.connect.ConnectActivity] after connecting their ClickUp account.
  */
 class WidgetConfigActivity : ComponentActivity() {
 

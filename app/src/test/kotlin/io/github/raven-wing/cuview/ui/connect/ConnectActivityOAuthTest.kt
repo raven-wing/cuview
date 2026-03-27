@@ -1,4 +1,4 @@
-package io.github.raven_wing.cuview.ui.main
+package io.github.raven_wing.cuview.ui.connect
 
 import android.content.Context
 import android.content.Intent
@@ -11,15 +11,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-// Robolectric tests for MainActivity's OAuth callback handling.
+// Robolectric tests for ConnectActivity's OAuth callback handling.
 //
-// In the new architecture, OAuth lives entirely in MainActivity — WidgetConfigActivity
+// In the new architecture, OAuth lives entirely in ConnectActivity — WidgetConfigActivity
 // is a lightweight target-selector only. These tests verify that onNewIntent routes
 // tokens and errors correctly, ignores unrelated URIs, and rejects callbacks that
 // don't carry the state nonce we generated (CSRF protection).
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
-class MainActivityOAuthTest {
+class ConnectActivityOAuthTest {
 
     private fun oauthCallbackIntent(
         token: String? = null,
@@ -35,14 +35,14 @@ class MainActivityOAuthTest {
     }
 
     /** Pre-populate the pending OAuth state so handleOAuthIntent accepts the callback. */
-    private fun seedState(activity: MainActivity, state: String) {
-        activity.getSharedPreferences(MainActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
-            .edit().putString(MainActivity.KEY_PENDING_STATE, state).apply()
+    private fun seedState(activity: ConnectActivity, state: String) {
+        activity.getSharedPreferences(ConnectActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
+            .edit().putString(ConnectActivity.KEY_PENDING_STATE, state).apply()
     }
 
     @Test
     fun onNewIntent_successToken_setsPendingOAuthToken() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ConnectActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 seedState(activity, "state-abc")
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_abc123", state = "state-abc"))
@@ -55,7 +55,7 @@ class MainActivityOAuthTest {
 
     @Test
     fun onNewIntent_error_setsPendingOAuthToken() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ConnectActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 seedState(activity, "state-xyz")
                 activity.onNewIntent(oauthCallbackIntent(error = "token_exchange_failed", state = "state-xyz"))
@@ -68,7 +68,7 @@ class MainActivityOAuthTest {
 
     @Test
     fun onNewIntent_unrelatedUri_doesNotChangePendingToken() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ConnectActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 activity.onNewIntent(Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com")))
             }
@@ -82,7 +82,7 @@ class MainActivityOAuthTest {
     // attacker-controlled token. Without state validation this would inject the token.
     @Test
     fun onNewIntent_missingState_isRejected() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ConnectActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 seedState(activity, "expected-state")
                 // Callback arrives without the state parameter
@@ -96,7 +96,7 @@ class MainActivityOAuthTest {
 
     @Test
     fun onNewIntent_wrongState_isRejected() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ConnectActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 seedState(activity, "expected-state")
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_injected", state = "attacker-state"))
@@ -110,7 +110,7 @@ class MainActivityOAuthTest {
     @Test
     fun onNewIntent_noStoredState_isRejected() {
         // No seedState call — simulates a callback arriving without an OAuth flow in flight
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ConnectActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_abc123", state = "any-state"))
             }
@@ -123,7 +123,7 @@ class MainActivityOAuthTest {
     @Test
     fun onNewIntent_stateIsConsumedAfterUse_replayIsRejected() {
         // The state nonce must be single-use: a second identical callback must be rejected.
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ConnectActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 seedState(activity, "one-time-state")
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_first", state = "one-time-state"))

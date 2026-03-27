@@ -1,4 +1,4 @@
-package io.github.raven_wing.cuview.ui.main
+package io.github.raven_wing.cuview.ui.connect
 
 import android.content.Context
 import android.content.Intent
@@ -53,7 +53,7 @@ sealed class OAuthResult {
 // ── Activity ───────────────────────────────────────────────────────────────────
 
 /**
- * Launcher activity that handles OAuth connect/disconnect and receives the OAuth callback.
+ * Activity that handles OAuth connect/disconnect and receives the OAuth callback.
  *
  * The OAuth flow:
  * 1. User taps "Connect Workspace" → a Chrome Custom Tab opens the ClickUp auth page.
@@ -67,7 +67,7 @@ sealed class OAuthResult {
  * the app's task and delivers it via [onNewIntent]. Without that flag, Chrome would share
  * this task and SINGLE_TOP matching would fail.
  */
-class MainActivity : ComponentActivity() {
+class ConnectActivity : ComponentActivity() {
 
     var pendingOAuthToken by mutableStateOf<OAuthResult?>(null)
         private set
@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    MainScreen(
+                    ConnectScreen(
                         pendingOAuthResult = pendingOAuthToken,
                         onOAuthResultConsumed = { pendingOAuthToken = null },
                     )
@@ -122,10 +122,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// ── Main screen ────────────────────────────────────────────────────────────────
+// ── Connect screen ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun MainScreen(
+private fun ConnectScreen(
     pendingOAuthResult: OAuthResult?,
     onOAuthResultConsumed: () -> Unit,
 ) {
@@ -186,20 +186,20 @@ private fun MainScreen(
                     val state = UUID.randomUUID().toString()
                     // Persist state before launching the CCT so handleOAuthIntent can
                     // validate it even if the process is recreated between launch and callback.
-                    context.getSharedPreferences(MainActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
-                        .edit().putString(MainActivity.KEY_PENDING_STATE, state).apply()
+                    context.getSharedPreferences(ConnectActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
+                        .edit().putString(ConnectActivity.KEY_PENDING_STATE, state).apply()
                     val redirectUri = Uri.encode(BuildConfig.CLOUDFLARE_WORKER_URL)
                     val authUrl = "https://app.clickup.com/api" +
                         "?client_id=${BuildConfig.CLICKUP_CLIENT_ID}" +
                         "&redirect_uri=$redirectUri" +
                         "&state=$state"
                     // FLAG_ACTIVITY_NEW_TASK opens Chrome in its own task, keeping
-                    // MainActivity alone at the top of the io.github.raven_wing.cuview task.
+                    // ConnectActivity alone at the top of the io.github.raven_wing.cuview task.
                     // When the Cloudflare Worker fires the intent:// callback with
                     // launchFlags=NEW_TASK|SINGLE_TOP, Android finds this task, sees
-                    // MainActivity at the top, and routes the callback via onNewIntent.
-                    // Without this flag, ChromeCCT would share MainActivity's task, and
-                    // SINGLE_TOP would never match (ChromeCCT is on top, not MainActivity).
+                    // ConnectActivity at the top, and routes the callback via onNewIntent.
+                    // Without this flag, ChromeCCT would share ConnectActivity's task, and
+                    // SINGLE_TOP would never match (ChromeCCT is on top, not ConnectActivity).
                     val cct = CustomTabsIntent.Builder().build()
                     cct.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     cct.launchUrl(context, Uri.parse(authUrl))

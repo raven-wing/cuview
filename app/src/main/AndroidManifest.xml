@@ -15,7 +15,7 @@
 
         <!-- Launcher activity — owns OAuth connect/disconnect flow. -->
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".ui.connect.ConnectActivity"
             android:exported="true"
             android:launchMode="singleTop">
 

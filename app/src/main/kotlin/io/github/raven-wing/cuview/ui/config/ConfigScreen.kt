@@ -33,7 +33,7 @@ import io.github.raven_wing.cuview.data.model.CUTask
 import io.github.raven_wing.cuview.data.model.CUView
 import io.github.raven_wing.cuview.data.model.TasksSource
 import io.github.raven_wing.cuview.data.repository.SpaceContents
-import io.github.raven_wing.cuview.ui.main.MainActivity
+import io.github.raven_wing.cuview.ui.connect.ConnectActivity
 import io.github.raven_wing.cuview.widget.WidgetTheme
 import kotlinx.coroutines.launch
 
@@ -146,7 +146,7 @@ internal fun ConfigScreen(
                 Button(
                     onClick = {
                         context.startActivity(
-                            Intent(context, MainActivity::class.java).apply {
+                            Intent(context, ConnectActivity::class.java).apply {
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             },
                         )
