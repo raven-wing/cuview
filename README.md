@@ -13,7 +13,9 @@ An Android home screen widget that displays your [ClickUp](https://clickup.com) 
 
 ## Screenshots
 
-_Screenshots coming soon._
+| Connect | Browse | Preview | Widget |
+|---------|--------|---------|--------|
+| ![Connect](distribution/play-store/phone/screenshots/00_connect.png) | ![Browse](distribution/play-store/phone/screenshots/01_browse.png) | ![Preview](distribution/play-store/phone/screenshots/02_preview.png) | ![Widget](distribution/play-store/phone/screenshots/03_widget.png) |
 
 ## Requirements
 
