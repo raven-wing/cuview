@@ -1,6 +1,5 @@
 import json
 from urllib.parse import quote
-from pyodide.ffi import to_js
 
 # intent:// URLs are Chrome's guaranteed mechanism for firing Android intents from a
 # browser tab. Custom scheme navigation (cuview://) is unreliable from Custom Tabs.
@@ -29,6 +28,7 @@ def build_deep_link_html(intent_url: str) -> str:
 
 async def on_fetch(request, env):
     import js
+    from pyodide.ffi import to_js
     url = js.URL.new(request.url)
 
     if request.method != "GET":
