@@ -1,32 +1,31 @@
-# Flow 01: connect in app → disconnect → reconnect → add widget → select → save.
+# Flow 01: add widget → connect → disconnect → reconnect → browse → save.
 #
-# Regression test for the OAuth callback routing bug.
-# In the old architecture, Chrome opened in a separate task that couldn't deliver
-# RESULT_OK back to the Launcher. The new architecture fixes this by moving OAuth
-# entirely into MainActivity (normal app flow), so the widget config never touches
-# Chrome and the result delivery is straightforward.
+# Regression test for the disconnect/reconnect flow within WidgetConfigActivity.
+# OAuth lives entirely in WidgetConfigActivity — there is no standalone launcher
+# activity. The widget must be placed first to obtain a real widget ID before
+# WidgetConfigActivity can be exercised.
 #
 # Run via: ./e2e/run.sh 01_disconnect_reconnect.yaml
 #
 appId: io.github.raven_wing.cuview
 ---
-# ── 0. Connect in the app ─────────────────────────────────────────────────────
-- launchApp
+# ── 0. Place widget — WidgetConfigActivity opens unauthenticated ──────────────
+- runFlow: ./_add_widget.yaml
+- assertVisible: "Connect with ClickUp"
+
+# ── 1. Connect ────────────────────────────────────────────────────────────────
 - runFlow: ./_connect.yaml
 - assertVisible: "Connected ✓"
 
-# ── 1. Disconnect ─────────────────────────────────────────────────────────────
+# ── 2. Disconnect ─────────────────────────────────────────────────────────────
 - tapOn: "Disconnect"
 - assertVisible: "Connect with ClickUp"
 
-# ── 2. Reconnect ──────────────────────────────────────────────────────────────
+# ── 3. Reconnect ──────────────────────────────────────────────────────────────
 - runFlow: ./_connect.yaml
 - assertVisible: "Connected ✓"
 
-# ── 3. Place widget on home screen ────────────────────────────────────────────
-- runFlow: ./_add_widget.yaml
-
-# ── 4. Widget config opens with browse tree (already connected) ───────────────
+# ── 4. Browse views ───────────────────────────────────────────────────────────
 - assertVisible: "Browse Views"
 - runFlow: ./_browse.yaml
 

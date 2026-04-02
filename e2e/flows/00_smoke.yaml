@@ -1,13 +1,10 @@
-# Flow 00: smoke test — app launches and widget config loads correctly.
+# Flow 00: smoke test — widget config loads correctly in unauthenticated state.
 # Does not require OAuth or a real ClickUp account.
 # Run via: ./e2e/run.sh 00_smoke
 appId: io.github.raven_wing.cuview
 ---
-# Verify the app launches and shows the connect button.
-- launchApp
-- assertVisible: "Connect with ClickUp"
-
 # Place the widget — config screen should show the not-connected state.
 - runFlow: ./_add_widget.yaml
 - assertVisible: "Configure CU View"
+- assertVisible: "Connect with ClickUp"
 - assertVisible: "Open CU View"
