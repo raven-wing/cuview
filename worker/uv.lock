@@ -70,14 +70,10 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 dev = [
-    { name = "pygments" },
     { name = "pytest" },
 ]
 
 [package.metadata]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "pygments", specifier = "<2.19.2" },
-    { name = "pytest", specifier = ">=9.0.2" },
-]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
