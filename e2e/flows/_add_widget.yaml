@@ -28,8 +28,6 @@ appId: io.github.raven_wing.cuview
 - extendedWaitUntil:
     visible: "CU View"
     timeout: 5000
-# Dismiss keyboard before interacting with the result row
-- pressKey: Back
 
 # ── Expand and long-press the preview card ───────────────────────────────────
 # index:1 skips the search-bar text and targets the result-row title.
