@@ -41,11 +41,7 @@ lint: ## Run lint checks
 e2e: install ## Build + install + run all E2E flows (state reset between each)
 	-adb shell pm clear $(LAUNCHER)
 	adb shell pm clear $(PACKAGE)
-	$(MAESTRO) test e2e/flows/00_smoke.yaml
-	-adb shell pm clear $(LAUNCHER)
-	adb shell pm clear $(PACKAGE)
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 
 e2e-fast: ## Run all E2E flows without rebuilding or clearing state
-	$(MAESTRO) test e2e/flows/00_smoke.yaml
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml

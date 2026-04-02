@@ -38,18 +38,15 @@ class CUViewWidgetReceiver : GlanceAppWidgetReceiver() {
         // Called on reboot / periodic system refresh — sync each widget individually.
         // Skip widgets that haven't been configured yet (e.g. onUpdate fires during the
         // WidgetConfigActivity flow before the user saves their selection).
-        // Use goAsync() to avoid blocking the main thread with SecurePreferences key
-        // derivation (~100ms) triggered by isConfigured().
-        val pendingResult = goAsync()
+        //
+        // Do NOT call goAsync() here: GlanceAppWidgetReceiver.onReceive() already consumes
+        // the PendingResult before dispatching to onUpdate(), so a second goAsync() call
+        // returns null and pendingResult.finish() throws NPE, crashing the process.
         CoroutineScope(Dispatchers.IO).launch {
-            try {
-                appWidgetIds.forEach { widgetId ->
-                    if (CUViewRepository(context).isConfigured(widgetId)) {
-                        TaskSyncWorker.enqueueImmediateSync(context, widgetId)
-                    }
+            appWidgetIds.forEach { widgetId ->
+                if (CUViewRepository(context).isConfigured(widgetId)) {
+                    TaskSyncWorker.enqueueImmediateSync(context, widgetId)
                 }
-            } finally {
-                pendingResult.finish()
             }
         }
     }
