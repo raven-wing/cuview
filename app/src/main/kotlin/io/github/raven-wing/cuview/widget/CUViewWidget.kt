@@ -73,14 +73,13 @@ class CUViewWidget : GlanceAppWidget() {
 
         taskStorage.clearSyncingIfStale(SYNC_STALE_THRESHOLD_MS)
 
-        val colors = WidgetTheme.fromId(taskStorage.loadThemeId()).colors.toWidgetColors()
-
         provideContent {
             // currentState() subscribes this composition to Glance's DataStore-backed widget
             // state. When updateAppWidgetState() changes this state (from a worker or the config
             // activity), Glance re-runs this lambda so all TaskStorage reads below are fresh.
             currentState<Preferences>()
 
+            val colors = WidgetTheme.fromId(taskStorage.loadThemeId()).colors.toWidgetColors()
             val tasks = taskStorage.loadTasks()
             val error = taskStorage.loadError()
             val isSyncing = taskStorage.isSyncing()

@@ -1,0 +1,37 @@
+# Flow 03: reconfigure — full happy path, then long-press widget → Edit → change theme
+# and view → save → verify config screen closes.
+#
+# Covers: theme change (regression for theme captured outside provideContent),
+# view change, and reconfigure mode ("Save Changes" button instead of "Save & Add Widget").
+appId: io.github.raven_wing.cuview
+---
+# Place and configure widget (reuse connect + browse subflows).
+- runFlow: ./_add_widget.yaml
+- assertVisible: "Connect with ClickUp"
+- runFlow: ./_connect.yaml
+- assertVisible: "Connected ✓"
+- assertVisible: "Browse Views"
+- runFlow: ./_browse.yaml
+- tapOn: "Save & Add Widget"
+- assertNotVisible: "Save & Add Widget"
+
+# Re-open config via long-press → Edit widget.
+- longPressOn:
+    id: "io.github.raven_wing.cuview:id/glance_root_view"
+- tapOn: "Edit widget"
+
+# Change theme to Light.
+- assertVisible: "Save Changes"
+- tapOn: "Light"
+
+# Change the selected view to Zebra (available in mock data).
+- tapOn: "Browse Views"
+- extendedWaitUntil:
+    visible:
+      text: "Zebra"
+- tapOn: "Zebra"
+
+# Save and verify config screen dismissed.
+- tapOn: "Save Changes"
+- assertNotVisible: "Save Changes"
+- assertNotVisible: "Browse Views"
