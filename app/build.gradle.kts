@@ -125,4 +125,5 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.mockwebserver)
     testImplementation(libs.robolectric)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

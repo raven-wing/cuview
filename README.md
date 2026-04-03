@@ -101,6 +101,3 @@ make e2e-fast   # run all flows without rebuilding or clearing state
 - **Colors** must use `ColorProvider(R.color.x)` — hardcoded `Color(0xFF…)` values ignore system dark/light mode.
 - **`LazyColumn`** translates to a `RemoteViews ListView` — keep items ≤ 15 and layouts simple.
 
-## License
-
-MIT License

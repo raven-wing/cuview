@@ -4,15 +4,18 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Looper
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 // Robolectric tests for WidgetConfigActivity's OAuth callback handling.
@@ -23,6 +26,17 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class WidgetConfigActivityOAuthTest {
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Before
+    fun setUp() {
+        WidgetConfigActivity.ioDispatcher = UnconfinedTestDispatcher()
+    }
+
+    @After
+    fun tearDown() {
+        WidgetConfigActivity.ioDispatcher = Dispatchers.IO
+    }
 
     private fun oauthCallbackIntent(
         token: String? = null,
@@ -57,11 +71,6 @@ class WidgetConfigActivityOAuthTest {
                 seedState(activity, "state-abc")
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_abc123", state = "state-abc"))
             }
-            // handleOAuthIntent saves the token on Dispatchers.IO before setting
-            // pendingOAuthResult. Give the IO thread time to complete, then drain the
-            // main looper so the coroutine resume is processed before asserting.
-            Thread.sleep(200)
-            shadowOf(Looper.getMainLooper()).idle()
             scenario.onActivity { activity ->
                 assertEquals(OAuthResult.Success("pk_abc123"), activity.pendingOAuthResult)
             }
@@ -143,11 +152,6 @@ class WidgetConfigActivityOAuthTest {
                 seedState(activity, "one-time-state")
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_first", state = "one-time-state"))
             }
-            // handleOAuthIntent saves the token on Dispatchers.IO before setting
-            // pendingOAuthResult. Give the IO thread time to complete, then drain the
-            // main looper so the coroutine resume is processed before asserting.
-            Thread.sleep(200)
-            shadowOf(Looper.getMainLooper()).idle()
             scenario.onActivity { activity ->
                 assertEquals(OAuthResult.Success("pk_first"), activity.pendingOAuthResult)
                 // Replay the same callback — state is already consumed, so it must be rejected

@@ -28,6 +28,7 @@ import io.github.raven_wing.cuview.data.storage.TaskStorage
 import io.github.raven_wing.cuview.widget.CUViewWidget
 import io.github.raven_wing.cuview.widget.WidgetTheme
 import io.github.raven_wing.cuview.worker.TaskSyncWorker
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -188,7 +189,7 @@ class WidgetConfigActivity : ComponentActivity() {
         // persisted even if the process is killed between the save and the UI update.
         lifecycleScope.launch {
             if (result is OAuthResult.Success) {
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     try { SecurePreferences(this@WidgetConfigActivity).apiToken = result.token.trim() }
                     catch (_: Exception) { /* Persist failure (e.g. Keystore unavailable) — UI still updates */ }
                 }
@@ -252,6 +253,10 @@ class WidgetConfigActivity : ComponentActivity() {
     }
 
     companion object {
+        // Overridable in tests to avoid real IO thread dispatch (eliminates Thread.sleep).
+        @JvmField
+        var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+
         internal const val PREFS_OAUTH_STATE = "cuview_oauth_state"
         internal const val KEY_PENDING_STATE = "pending_state"
         internal const val PREFS_OAUTH_PENDING_ERROR = "cuview_oauth_pending_error"
