@@ -78,16 +78,21 @@ make e2e-fast   # run all flows without rebuilding or clearing state
 
 | Flow | Description |
 |------|-------------|
-| `00_smoke.yaml` | Place widget, verify config screen loads — no OAuth needed |
-| `01_disconnect_reconnect.yaml` | Regression: connect → disconnect → reconnect → browse → save |
+| `01_disconnect_reconnect.yaml` | Full happy path + regression: place widget → connect → disconnect → reconnect → browse → save |
+| `02_cancel.yaml` | Regression: place widget → back-press → verify no broken widget slot left behind |
+| `03_reconfigure.yaml` | Reconfigure existing widget: change theme to Light + change view → save |
 
 ## CI
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| `pr.yml` | PR to `main` | Builds APK, runs unit tests |
+| `unit-tests.yml` | PR to `main` | Runs unit tests |
+| `detekt.yml` | PR to `main` | Static analysis (Detekt) |
+| `codeql.yml` | PR to `main` | CodeQL security scan |
+| `gitleaks.yml` | PR to `main` | Secret scanning |
+| `license-check.yml` | PR to `main` | License header check |
+| `e2e.yml` | PR touching `app/` or `e2e/` | Boots emulator, runs all Maestro flows with mock API |
 | `release.yml` | Push to `main` | Creates release PRs and GitHub releases via `release-please` |
-| `e2e.yml` | PR touching `app/` or `e2e/`, or manual | Boots API 34 emulator, runs both Maestro flows with mock API |
 
 ## Glance gotchas
 
