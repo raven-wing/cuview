@@ -66,13 +66,15 @@ class WidgetConfigActivityOAuthTest {
 
     @Test
     fun onNewIntent_successToken_setsPendingOAuthResult() {
+        // SecurePreferences throws in Robolectric (Tink Keystore unavailable), so saving the
+        // token fails and the activity must surface Failure rather than a false Success.
         launchActivity().use { scenario ->
             scenario.onActivity { activity ->
                 seedState(activity, "state-abc")
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_abc123", state = "state-abc"))
             }
             scenario.onActivity { activity ->
-                assertEquals(OAuthResult.Success("pk_abc123"), activity.pendingOAuthResult)
+                assertEquals(OAuthResult.Failure("token_storage_failed"), activity.pendingOAuthResult)
             }
         }
     }
@@ -147,19 +149,20 @@ class WidgetConfigActivityOAuthTest {
     @Test
     fun onNewIntent_stateIsConsumedAfterUse_replayIsRejected() {
         // The state nonce must be single-use: a second identical callback must be rejected.
+        // SecurePreferences throws in Robolectric, so the first callback resolves to Failure.
         launchActivity().use { scenario ->
             scenario.onActivity { activity ->
                 seedState(activity, "one-time-state")
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_first", state = "one-time-state"))
             }
             scenario.onActivity { activity ->
-                assertEquals(OAuthResult.Success("pk_first"), activity.pendingOAuthResult)
+                assertEquals(OAuthResult.Failure("token_storage_failed"), activity.pendingOAuthResult)
                 // Replay the same callback — state is already consumed, so it must be rejected
                 activity.onNewIntent(oauthCallbackIntent(token = "pk_replay", state = "one-time-state"))
             }
             scenario.onActivity { activity ->
-                // pendingOAuthResult must not have been updated to pk_replay
-                assertEquals(OAuthResult.Success("pk_first"), activity.pendingOAuthResult)
+                // pendingOAuthResult must not have been updated by the replay
+                assertEquals(OAuthResult.Failure("token_storage_failed"), activity.pendingOAuthResult)
             }
         }
     }

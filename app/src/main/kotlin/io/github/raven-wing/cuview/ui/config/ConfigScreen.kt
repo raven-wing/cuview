@@ -217,7 +217,6 @@ internal fun ConfigScreen(
                 if (tokenState is TokenState.Token) {
                     val token = tokenState.value
                     Spacer(Modifier.height(12.dp))
-
                     when (val level = navLevel) {
                         is NavLevel.Root -> SpaceListLevel(
                             spacesState = spacesState,

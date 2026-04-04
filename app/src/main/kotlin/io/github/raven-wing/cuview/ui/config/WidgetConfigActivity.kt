@@ -189,9 +189,19 @@ class WidgetConfigActivity : ComponentActivity() {
         // persisted even if the process is killed between the save and the UI update.
         lifecycleScope.launch {
             if (result is OAuthResult.Success) {
+                var storageOk = false
                 withContext(ioDispatcher) {
-                    try { SecurePreferences(this@WidgetConfigActivity).apiToken = result.token.trim() }
-                    catch (_: Exception) { /* Persist failure (e.g. Keystore unavailable) — UI still updates */ }
+                    try {
+                        SecurePreferences(this@WidgetConfigActivity).apiToken = result.token.trim()
+                        storageOk = true
+                    } catch (_: Exception) {
+                        // Keystore unavailable — surface the failure so the UI does not show
+                        // a false "connected" state while the token is actually lost.
+                    }
+                }
+                if (!storageOk) {
+                    pendingOAuthResult = OAuthResult.Failure("token_storage_failed")
+                    return@launch
                 }
             }
             pendingOAuthResult = result
