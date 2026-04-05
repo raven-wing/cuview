@@ -2,7 +2,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -75,10 +74,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -92,15 +87,15 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src/main/kotlin")
+            java.srcDir("src/main/kotlin")
         }
         getByName("test") {
-            java.srcDirs("src/test/kotlin")
+            java.srcDir("src/test/kotlin")
         }
         // Release-only unit tests: used for tests that require USE_MOCK_API=false,
         // i.e. tests that exercise real network paths through the repository layer.
         getByName("testRelease") {
-            java.srcDirs("src/testRelease/kotlin")
+            java.srcDir("src/testRelease/kotlin")
         }
     }
 }

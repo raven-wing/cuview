@@ -248,12 +248,11 @@ class WidgetConfigActivity : ComponentActivity() {
 
         val widgetIdCapture = appWidgetId
         lifecycleScope.launch {
-            GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(widgetIdCapture)?.let { glanceId ->
-                updateAppWidgetState(this@WidgetConfigActivity, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-                    prefs.toMutablePreferences().apply { this[CUViewWidget.LAST_SYNCED_KEY] = System.currentTimeMillis() }
-                }
-                CUViewWidget().update(this@WidgetConfigActivity, glanceId)
+            val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(widgetIdCapture)
+            updateAppWidgetState(this@WidgetConfigActivity, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+                prefs.toMutablePreferences().apply { this[CUViewWidget.LAST_SYNCED_KEY] = System.currentTimeMillis() }
             }
+            CUViewWidget().update(this@WidgetConfigActivity, glanceId)
             TaskSyncWorker.enqueueImmediateSync(this@WidgetConfigActivity, widgetIdCapture)
             TaskSyncWorker.enqueuePeriodicSync(this@WidgetConfigActivity, widgetIdCapture)
             setResult(RESULT_OK, Intent().apply { putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetIdCapture) })

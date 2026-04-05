@@ -97,11 +97,9 @@ class TaskSyncWorker(
      */
     private suspend fun notifyWidget(widgetId: Int) {
         val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(widgetId)
-        if (glanceId != null) {
-            updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-                prefs.toMutablePreferences().apply {
-                    this[LAST_SYNCED_KEY] = System.currentTimeMillis()
-                }
+        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+            prefs.toMutablePreferences().apply {
+                this[LAST_SYNCED_KEY] = System.currentTimeMillis()
             }
         }
         CUViewWidget().updateAll(context)
