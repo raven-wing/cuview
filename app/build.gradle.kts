@@ -87,15 +87,15 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDir("src/main/kotlin")
+            java.setSrcDirs(listOf("src/main/kotlin"))
         }
         getByName("test") {
-            java.srcDir("src/test/kotlin")
+            java.setSrcDirs(listOf("src/test/kotlin"))
         }
         // Release-only unit tests: used for tests that require USE_MOCK_API=false,
         // i.e. tests that exercise real network paths through the repository layer.
         getByName("testRelease") {
-            java.srcDir("src/testRelease/kotlin")
+            java.setSrcDirs(listOf("src/testRelease/kotlin"))
         }
     }
 }
