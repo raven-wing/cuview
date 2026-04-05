@@ -12,7 +12,7 @@ val localProps = Properties().apply {
     if (f.exists()) load(f.inputStream())
 }
 
-fun secret(envKey: String, propKey: String): String =
+fun requiredConfig(envKey: String, propKey: String): String =
     System.getenv(envKey)
         ?: localProps[propKey] as String?
         ?: rootProject.properties[propKey] as String?
@@ -28,8 +28,8 @@ android {
         targetSdk = 35
         versionCode = (rootProject.properties["VERSION_CODE"] as String?)?.toInt() ?: 1
         versionName = rootProject.properties["VERSION_NAME"] as String? ?: "0.1.0"
-        buildConfigField("String", "CLICKUP_CLIENT_ID",    "\"${secret("CLICKUP_CLIENT_ID", "clickup.client.id")}\"")
-        buildConfigField("String", "CLOUDFLARE_WORKER_URL", "\"${secret("CLOUDFLARE_WORKER_URL", "cloudflare.worker.url")}\"")
+        buildConfigField("String", "CLICKUP_CLIENT_ID",    "\"${requiredConfig("CLICKUP_CLIENT_ID", "clickup.client.id")}\"")
+        buildConfigField("String", "CLOUDFLARE_WORKER_URL", "\"${requiredConfig("CLOUDFLARE_WORKER_URL", "cloudflare.worker.url")}\"")
         buildConfigField("Boolean", "USE_MOCK_API", "false")
     }
 

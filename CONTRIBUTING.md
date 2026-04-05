@@ -50,10 +50,6 @@ E2E tests require a connected Android device and Maestro 1.40.0 installed at `~/
 | `:app` | Widget application |
 | `:lint-rules` | Custom `GlanceDpDetector` lint rule — catches raw `Int` dimensions passed to Glance (would crash at runtime) |
 
-## Branch Conventions
-
-- `code` is the main development branch — branch from here for new work.
-- `main` is release-only — do not target it directly with feature branches.
 
 ## Bug Fixes
 
@@ -91,7 +87,7 @@ Flows live in `e2e/flows/`. Files prefixed with `_` are subflows and cannot be r
 
 ## Pull Request Process
 
-1. Branch from `code`.
+1. Branch from `main`.
 2. Make sure `make test` and `make lint` pass locally.
 3. Keep PRs focused — one thing per PR.
 
