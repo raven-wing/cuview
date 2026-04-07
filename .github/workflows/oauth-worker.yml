@@ -1,0 +1,25 @@
+name: OAuth Worker
+
+on:
+  pull_request:
+    branches:
+    - main
+    paths:
+      - worker/**
+      - .github/workflows/oauth-worker.yml
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
+
+      - name: Run tests
+        run: uv run python -m pytest tests/ -v
+        working-directory: worker

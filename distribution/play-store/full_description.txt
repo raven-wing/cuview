@@ -1,0 +1,15 @@
+CU View puts your ClickUp tasks directly on your home screen as an Android widget.
+
+Pick any ClickUp view (space → folder → list → view) and its tasks appear on your home screen, auto-refreshing every 15 minutes. Tap a task to open it in the ClickUp app or browser.
+
+Features:
+• Connect via ClickUp OAuth — no API token copy-pasting
+• Browse your workspace hierarchy to select any list view
+• Auto-refresh every 15 minutes via WorkManager
+• Manual refresh with the refresh button
+• Shows up to 15 tasks; stale cache preserved on network failure
+• Dark and light mode support
+
+No account required beyond an existing ClickUp workspace.
+Open source (MIT): https://github.com/raven-wing/cuview
+Support development: https://buymeacoffee.com/raven_wing

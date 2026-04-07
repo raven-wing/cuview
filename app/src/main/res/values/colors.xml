@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_background">#FF12122A</color>
+    <color name="widget_title">#FFFFFFFF</color>
+    <color name="widget_text">#FFE2E2F0</color>
+    <color name="widget_text_secondary">#FF6B7280</color>
+    <color name="widget_error">#FFF87171</color>
+    <color name="widget_divider">#FF1E1E30</color>
+    <color name="task_tile_background">#FF1C1C2E</color>
+    <color name="task_tile_pressed">#FF28283E</color>
+    <color name="accent">#FF818CF8</color>
+</resources>

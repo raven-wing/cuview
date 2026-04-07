@@ -1,0 +1,11 @@
+# Flow 02: cancel — place widget → back-press → verify config screen is gone.
+#
+# Regression: if WidgetConfigActivity does not call setResult(RESULT_CANCELED) as
+# its very first line, back-pressing without saving leaves a broken (unconfigured)
+# widget slot on the home screen. This flow verifies the activity exits cleanly.
+appId: io.github.raven_wing.cuview
+---
+- runFlow: ./_add_widget.yaml
+- assertVisible: "Connect with ClickUp"
+- pressKey: Back
+- assertNotVisible: "Connect with ClickUp"

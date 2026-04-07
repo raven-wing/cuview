@@ -1,0 +1,15 @@
+local.properties
+*.iml
+.claude/
+.gradle/
+.idea/
+**/build/
+app/release/
+.local/
+.kotlin/
+*~
+distribution/fdroid-metadata-reference.yml
+worker/.wrangler/
+*.hprof
+captures/
+*.DS_Store
