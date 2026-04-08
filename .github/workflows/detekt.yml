@@ -1,0 +1,46 @@
+name: Detekt Static Analysis
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  detekt:
+    name: Detekt Static Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    env:
+      DETEKT_VERSION: 1.23.8
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - uses: peter-murray/setup-detekt@26449609a63e843a5b9bad8a4b63ef0ee717f7a5
+        with:
+          detekt_version: 1.23.8
+
+      - name: Run Detekt
+        id: detekt
+        run: |
+          set +e
+          detekt-cli \
+            --input app/src/main/kotlin,app/src/test/kotlin,lint-rules/src/main/kotlin,lint-rules/src/test/kotlin \
+            --config detekt.yml \
+            --report sarif:detekt.sarif.json
+          echo "exit-code=$?" >> $GITHUB_OUTPUT
+
+      - name: Upload SARIF to GitHub Security tab
+        if: hashFiles('detekt.sarif.json') != ''
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: detekt.sarif.json
+          category: detekt
+
+      - name: Fail on Detekt violations or error
+        if: steps.detekt.outputs.exit-code != '0'
+        run: exit ${{ steps.detekt.outputs.exit-code }}

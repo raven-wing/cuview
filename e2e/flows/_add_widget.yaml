@@ -1,0 +1,46 @@
+# Subflow: place the CU View widget on the home screen.
+#
+# Pre-condition:  home screen is visible.
+# Post-condition: WidgetConfigActivity is open ("Configure CU View" is visible).
+#
+# Pixel Launcher widget placement:
+#   long-press empty home screen space → tap "Widgets" → search "CU View" →
+#   pressKey:Back (dismiss keyboard) → tap row[index:1] to expand →
+#   long-press preview card → launcher opens WidgetConfigActivity.
+#
+# Using search avoids the unpredictable scroll/pin behaviour that differs
+# between host-GPU (local) and software-GPU (CI) rendering modes.
+# index:1 skips the search-bar's own "CU View" text and targets the row title.
+appId: io.github.raven_wing.cuview
+---
+# ── Open the widget picker ────────────────────────────────────────────────────
+- pressKey: Home
+- longPressOn:
+    point: "50%, 40%"
+- extendedWaitUntil:
+    visible: "Widgets"
+    timeout: 5000
+- tapOn: "Widgets"
+
+# ── Search for the widget ─────────────────────────────────────────────────────
+- tapOn: "Search"
+- inputText: "CU View"
+- extendedWaitUntil:
+    visible: "CU View"
+    timeout: 5000
+
+# ── Expand and long-press the preview card ───────────────────────────────────
+# index:1 skips the search-bar text and targets the result-row title.
+- tapOn:
+    text: "CU View"
+    index: 1
+- extendedWaitUntil:
+    visible: "Displays tasks from a CU View"
+    timeout: 5000
+- longPressOn:
+    point: "50%, 55%"
+
+# ── WidgetConfigActivity opens with a real widget ID ─────────────────────────
+- extendedWaitUntil:
+    visible: "Configure CU View"
+    timeout: 15000

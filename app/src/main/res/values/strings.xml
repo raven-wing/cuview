@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CU View</string>
+    <string name="widget_description">Displays tasks from a CU View</string>
+    <string name="config_title">Configure CU View</string>
+    <string name="config_api_token_label">API Token</string>
+    <string name="config_api_token_placeholder">pk_…</string>
+    <string name="config_browse_button">Browse Views</string>
+    <string name="config_select_view_label">Select View</string>
+    <string name="config_save_button">Save &amp; Add Widget</string>
+    <string name="config_update_button">Save Changes</string>
+    <string name="config_api_token_help">Profile → Settings → Apps → API Token  ↗</string>
+    <string name="config_api_token_saved">API token saved</string>
+    <string name="config_api_token_change">Change</string>
+    <string name="config_api_token_cancel">Cancel</string>
+    <string name="config_error_empty_token">Connect with ClickUp first</string>
+    <string name="config_connect_button">Connect with ClickUp</string>
+    <string name="config_connected_label">Connected ✓</string>
+    <string name="config_disconnect_button">Disconnect</string>
+    <plurals name="config_preview_header">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
+    <string name="config_preview_empty">No tasks in this view</string>
+    <string name="config_preview_more">… and %d more</string>
+</resources>

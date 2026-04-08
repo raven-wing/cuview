@@ -1,0 +1,51 @@
+# Flow 03: reconfigure — full happy path, then long-press widget → Edit → change theme
+# and view → save → verify config screen closes.
+#
+# Covers: theme change (regression for theme captured outside provideContent),
+# view change, and reconfigure mode ("Save Changes" button instead of "Save & Add Widget").
+appId: io.github.raven_wing.cuview
+---
+# Place and configure widget (reuse connect + browse subflows).
+- runFlow: ./_add_widget.yaml
+- assertVisible: "Connect with ClickUp"
+- runFlow: ./_connect.yaml
+- assertVisible: "Connected ✓"
+- assertVisible: "Browse Views"
+- runFlow: ./_browse.yaml
+- tapOn: "Save & Add Widget"
+- assertNotVisible: "Save & Add Widget"
+
+# Re-open config via long-press → Edit widget.
+# After placement the widget is in resize mode; press Back to deselect, then
+# press Home to ensure we are on the home screen before the long press.
+# Glance widget is not in the a11y tree — must use screen coordinates.
+- longPressOn:
+    point: "50%, 60%"
+- tapOn: "Change widget settings"
+
+# Change theme to Light.
+- assertVisible: "Save Changes"
+- tapOn: "Light"
+
+# Change the selected view to Zebra (Mammals → Hoofed Animals → Zebra).
+- tapOn: "Browse Views"
+- extendedWaitUntil:
+    visible:
+      text: "Mammals"
+    timeout: 5000
+- tapOn: "Mammals"
+- tapOn:
+    text: "Hoofed Animals"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      text: "Zebra"
+    timeout: 5000
+- tapOn: "Zebra"
+- assertVisible: "Zebra"
+- tapOn: "Zebra"
+
+# Save and verify config screen dismissed.
+- tapOn: "Save Changes"
+- assertNotVisible: "Save Changes"
+- assertNotVisible: "Browse Views"

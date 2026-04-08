@@ -1,0 +1,23 @@
+config:
+  validation: true
+  warningsAsErrors: false
+
+complexity:
+  active: true
+  TooManyFunctions:
+    thresholdInFiles: 20
+    thresholdInClasses: 15
+
+style:
+  active: true
+  MagicNumber:
+    active: false
+
+exceptions:
+  active: true
+
+potential-bugs:
+  active: true
+
+coroutines:
+  active: true

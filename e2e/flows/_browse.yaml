@@ -1,0 +1,32 @@
+# Subflow: browse the view/list tree and select a target.
+#
+# Pre-condition:  "Connected ✓" is visible; user is at the root nav level.
+# Post-condition: a target is selected and the task preview has loaded
+#                 (Save & Add Widget button is enabled).
+appId: io.github.raven_wing.cuview
+---
+- tapOn: "Browse Views"
+
+# Space level
+- extendedWaitUntil:
+    visible: "Mammals"
+    timeout: 10000
+- tapOn: "Mammals"
+
+# Folder level (skipped when folder is absent)
+- tapOn:
+    text: "Hoofed Animals"
+    optional: true     # no-op if the list lives directly under the space
+
+# List level
+- extendedWaitUntil:
+    visible: "Horse"
+    timeout: 10000
+- tapOn: "Horse"
+
+# List-selection level
+- extendedWaitUntil:
+    visible: "Horse"
+    timeout: 5000
+- tapOn: "Horse"
+
