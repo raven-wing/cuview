@@ -7,6 +7,7 @@ on:
     paths:
       - 'app/**'
       - 'e2e/**'
+      - 'Makefile'
       - '.github/workflows/e2e.yml'
 
 jobs:

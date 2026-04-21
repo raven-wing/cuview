@@ -6,7 +6,7 @@ APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE := app/build/outputs/bundle/release/app-release.aab
 MAESTRO     := $(HOME)/.maestro/bin/maestro
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
