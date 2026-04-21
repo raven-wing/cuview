@@ -10,6 +10,6 @@ Features:
 • Shows up to 15 tasks; stale cache preserved on network failure
 • Dark and light mode support
 
-No account required beyond an existing ClickUp workspace.
+Works with your existing ClickUp account — no separate registration needed.
 Open source (MIT): https://github.com/raven-wing/cuview
 Support development: https://buymeacoffee.com/raven_wing
