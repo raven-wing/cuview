@@ -2,6 +2,7 @@ PACKAGE     := io.github.raven_wing.cuview
 LAUNCHER    ?= com.google.android.apps.nexuslauncher
 APK         := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
+APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE := app/build/outputs/bundle/release/app-release.aab
 MAESTRO     := $(HOME)/.maestro/bin/maestro
 
@@ -23,6 +24,17 @@ build-release: ## Build release APK (signed; set keystore.* in local.properties 
 
 install-release: build-release ## Build and install release APK on connected device
 	adb install -r $(APK_RELEASE)
+
+e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all E2E flows
+	./gradlew assembleReleaseTest
+	adb uninstall $(PACKAGE) || true
+	adb install $(APK_RELEASE_TEST)
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/02_cancel.yaml
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease

@@ -35,8 +35,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug
+      - name: Build releaseTest APK (R8 on, mock API, debug-signed)
+        run: ./gradlew assembleReleaseTest
 
       - name: Install Maestro
         run: |
@@ -51,7 +51,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           emulator-options: -no-snapshot-save -no-window -gpu angle_indirect -noaudio -no-boot-anim
-          script: make e2e
+          script: make e2e-release
 
       - name: Upload Maestro report on failure
         if: failure()

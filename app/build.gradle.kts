@@ -52,12 +52,11 @@ android {
         }
     }
 
+    val useMockApi = System.getenv("USE_MOCK_API") ?: localProps["use.mock.api"] as String?
+
     buildTypes {
         debug {
-            val useMock = System.getenv("USE_MOCK_API")
-                ?: localProps["use.mock.api"] as String?
-                ?: "true"
-            buildConfigField("Boolean", "USE_MOCK_API", useMock)
+            buildConfigField("Boolean", "USE_MOCK_API", useMockApi ?: "true")
         }
         release {
             isMinifyEnabled = true
@@ -66,6 +65,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("Boolean", "USE_MOCK_API", useMockApi ?: "false")
+        }
+        create("releaseTest") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            buildConfigField("Boolean", "USE_MOCK_API", useMockApi ?: "true")
         }
     }
 
