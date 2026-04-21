@@ -13,3 +13,4 @@ worker/.wrangler/
 *.hprof
 captures/
 *.DS_Store
+e2e/recordings/

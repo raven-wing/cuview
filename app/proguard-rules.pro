@@ -30,6 +30,9 @@
     public <init>(android.content.Context, androidx.work.WorkerParameters);
 }
 
+# WorkManager's internal Room database impl — R8 strips its no-arg constructor otherwise
+-keep class androidx.work.impl.WorkDatabase_Impl { <init>(); }
+
 # Widget and worker classes (keep all members in case of reflection / RemoteViews)
 -keep class io.github.raven_wing.cuview.widget.** { *; }
 -keep class io.github.raven_wing.cuview.worker.** { *; }

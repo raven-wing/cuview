@@ -10,6 +10,7 @@
 appId: io.github.raven_wing.cuview
 ---
 # ── 0. Place widget — WidgetConfigActivity opens unauthenticated ──────────────
+- runFlow: ./_chrome_setup.yaml
 - runFlow: ./_add_widget.yaml
 - assertVisible: "Connect with ClickUp"
 
@@ -32,12 +33,13 @@ appId: io.github.raven_wing.cuview
 # ── 5. Save ───────────────────────────────────────────────────────────────────
 - tapOn: "Save & Add Widget"
 
-# ── 6. Verify config activity closed and home screen is restored ───────────────
-# WidgetConfigActivity calls setResult(RESULT_OK) and finish() — the launcher
-# returns to the home screen with the newly configured widget.
-#
-# Note: Glance widget content is rendered in RemoteViews, which UIAutomator
-# cannot traverse. Task names and the target label are therefore not assertable
-# via Maestro. Visual verification is available in the Maestro screenshot report.
-- assertNotVisible: "Browse Views"
-- assertNotVisible: "Save & Add Widget"
+# ── 6. Verify home screen is restored with widget placed ──────────────────────
+# Glance widget content lives in RemoteViews (not the a11y tree), so we can't
+# assert widget text. Long-pressing the widget and confirming the launcher context
+# menu appears is the closest proxy: it proves the home screen is in front (not
+# Chrome's CCT — regression for the "back to ClickUp" bug) AND the widget is
+# placed at the expected position.
+- longPressOn:
+    point: "50%, 60%"
+- assertVisible: "Change widget settings"
+- pressKey: Back

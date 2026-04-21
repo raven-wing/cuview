@@ -2,14 +2,7 @@
   "release-type": "simple",
   "packages": {
     ".": {
-      "release-type": "simple",
-      "extra-files": [
-        {
-          "type": "generic",
-          "path": "gradle.properties",
-          "search-version-regex": "VERSION_NAME=(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        }
-      ]
+      "release-type": "simple"
     }
   }
 }
