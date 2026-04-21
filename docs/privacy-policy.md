@@ -1,19 +1,19 @@
 # CU View – Privacy Policy
 
-*Last updated: 2026-03-10*
+*Last updated: 2026-04-17*
 
 ## What data the app collects
 
 CU View stores the following data locally on your device:
 
 - Your ClickUp OAuth access token, encrypted using Android's EncryptedSharedPreferences.
-- A task cache (task names and IDs from the selected ClickUp view), stored in plain SharedPreferences.
+- A task cache (task names and IDs from the selected ClickUp view), encrypted using Android's EncryptedSharedPreferences.
 
 No data is collected by the developer. No analytics, crash reporting, or tracking libraries are included.
 
 ## How the data is used
 
-The access token is sent solely to the ClickUp API (`api.clickup.com`) to fetch tasks for the selected view. It is never transmitted to any other server.
+The access token is sent to the ClickUp API (`api.clickup.com`) to fetch tasks for the selected view. During the initial OAuth sign-in, the token also briefly transits through a Cloudflare Worker acting as a redirect endpoint — it is not logged or retained there.
 
 ## OAuth flow
 
@@ -21,7 +21,7 @@ During sign-in, an authorization code is exchanged for an access token via a Clo
 
 ## Data sharing
 
-No personal data is shared with third parties beyond the ClickUp API requests initiated by you.
+No personal data is shared with third parties beyond the ClickUp API requests initiated by you and the Cloudflare Worker used solely as an OAuth redirect endpoint during sign-in.
 
 ## Data deletion
 
