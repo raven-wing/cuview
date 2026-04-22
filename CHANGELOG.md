@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/raven-wing/cuview/compare/v0.1.2...v0.1.3) (2026-04-22)
+
+
+### Bug Fixes
+
+* version code is now generated properly ([#24](https://github.com/raven-wing/cuview/issues/24)) ([f763a1f](https://github.com/raven-wing/cuview/commit/f763a1f96c948158361b05ca41788b3a3fc0b921))
+
 ## [0.1.2](https://github.com/raven-wing/cuview/compare/v0.1.1...v0.1.2) (2026-04-21)
 
 
