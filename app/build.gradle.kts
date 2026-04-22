@@ -17,6 +17,10 @@ fun requiredConfig(envKey: String, propKey: String): String =
         ?: rootProject.properties[propKey] as String?
         ?: error("Missing $envKey / $propKey")
 
+val appVersionName = rootProject.file(".release-please-manifest.json")
+    .readText()
+    .let { Regex(""""\."\s*:\s*"([^"]+)"""").find(it)!!.groupValues[1] }
+
 android {
     namespace = "io.github.raven_wing.cuview"
     compileSdk = 35
@@ -25,8 +29,9 @@ android {
         applicationId = "io.github.raven_wing.cuview"
         minSdk = 26
         targetSdk = 35
-        versionCode = (rootProject.properties["VERSION_CODE"] as String?)?.toInt() ?: 1
-        versionName = rootProject.properties["VERSION_NAME"] as String? ?: "0.1.0"
+        versionName = appVersionName
+        versionCode = appVersionName.split(".").map { it.toInt() }
+            .let { (major, minor, patch) -> major * 1_000_000 + minor * 1_000 + patch }
         buildConfigField("String", "CLICKUP_CLIENT_ID",    "\"${requiredConfig("CLICKUP_CLIENT_ID", "clickup.client.id")}\"")
         buildConfigField("String", "CLOUDFLARE_WORKER_URL", "\"${requiredConfig("CLOUDFLARE_WORKER_URL", "cloudflare.worker.url")}\"")
         buildConfigField("Boolean", "USE_MOCK_API", "false")
