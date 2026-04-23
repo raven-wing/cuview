@@ -32,6 +32,7 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	adb uninstall $(PACKAGE) || true
 	adb install $(APK_RELEASE_TEST)
 	$(MAKE) mock-oauth-start
+	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml
 	$(call reset-state)
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 	$(call reset-state)
@@ -72,6 +73,7 @@ mock-oauth-stop: ## Stop local mock OAuth server
 	-rm -f $(MOCK_OAUTH_PID)
 
 e2e: install mock-oauth-start ## Build + install + run all E2E flows (state reset between each)
+	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml
 	$(call reset-state)
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 	$(call reset-state)
