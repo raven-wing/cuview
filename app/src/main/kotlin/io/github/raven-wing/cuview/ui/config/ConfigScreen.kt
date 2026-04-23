@@ -191,7 +191,7 @@ internal fun ConfigScreen(
                             // intent:// → handleOAuthCallback path, including Chrome's task-switching
                             // behaviour, without real ClickUp credentials.
                             // Port must match MOCK_OAUTH_PORT in mock_oauth_server.py.
-                            "http://10.0.2.2:8765/?state=$state"
+                            "http://localhost:8765/?state=$state"
                         } else {
                             val redirectUri = Uri.encode(BuildConfig.CLOUDFLARE_WORKER_URL)
                             "https://app.clickup.com/api" +
