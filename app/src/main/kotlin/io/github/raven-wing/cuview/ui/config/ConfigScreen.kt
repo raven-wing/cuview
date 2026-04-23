@@ -180,33 +180,33 @@ internal fun ConfigScreen(
                     apiToken = if (tokenState is TokenState.Token) tokenState.value else null,
                     oauthError = oauthError,
                     onConnect = {
-                        if (BuildConfig.USE_MOCK_API) {
-                            scope.launch {
-                                withContext(Dispatchers.IO) { SecurePreferences(context).apiToken = "mock_token" }
-                                onTokenChanged(TokenState.Token("mock_token"))
-                            }
+                        val state = UUID.randomUUID().toString()
+                        // Persist state before launching the CCT so handleOAuthCallback /
+                        // handleOAuthIntent can validate it even if the process is recreated.
+                        context.getSharedPreferences(WidgetConfigActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
+                            .edit().putString(WidgetConfigActivity.KEY_PENDING_STATE, state).apply()
+                        val authUrl = if (BuildConfig.USE_MOCK_API) {
+                            // Point at the local mock OAuth server (e2e/mock_oauth_server.py)
+                            // running on the host machine. This exercises the full Chrome CCT →
+                            // intent:// → handleOAuthCallback path, including Chrome's task-switching
+                            // behaviour, without real ClickUp credentials.
+                            // Port must match MOCK_OAUTH_PORT in mock_oauth_server.py.
+                            "http://10.0.2.2:8765/?state=$state"
                         } else {
-                            val state = UUID.randomUUID().toString()
-                            // Persist state before launching the CCT so handleOAuthIntent can
-                            // validate it even if the process is recreated between launch and callback.
-                            context.getSharedPreferences(WidgetConfigActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
-                                .edit().putString(WidgetConfigActivity.KEY_PENDING_STATE, state).apply()
                             val redirectUri = Uri.encode(BuildConfig.CLOUDFLARE_WORKER_URL)
-                            val authUrl = "https://app.clickup.com/api" +
+                            "https://app.clickup.com/api" +
                                 "?client_id=${BuildConfig.CLICKUP_CLIENT_ID}" +
                                 "&redirect_uri=$redirectUri" +
                                 "&state=$state"
-                            // FLAG_ACTIVITY_NEW_TASK opens Chrome in its own task, keeping
-                            // WidgetConfigActivity alone at the top of the io.github.raven_wing.cuview task.
-                            // When the Cloudflare Worker fires the intent:// callback with
-                            // launchFlags=NEW_TASK|SINGLE_TOP, Android finds this task, sees
-                            // WidgetConfigActivity at the top, and routes the callback via onNewIntent.
-                            // Without this flag, ChromeCCT would share WidgetConfigActivity's task, and
-                            // SINGLE_TOP would never match (ChromeCCT is on top, not WidgetConfigActivity).
-                            val cct = CustomTabsIntent.Builder().build()
-                            cct.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            cct.launchUrl(context, Uri.parse(authUrl))
                         }
+                        // FLAG_ACTIVITY_NEW_TASK opens Chrome in its own task so that
+                        // WidgetConfigActivity remains in the launcher's task. The OAuth
+                        // callback (cuview:// intent) therefore lands in a fresh instance
+                        // handled by handleOAuthCallback, which calls moveTaskToFront to
+                        // bring the original instance back to the foreground.
+                        val cct = CustomTabsIntent.Builder().build()
+                        cct.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        cct.launchUrl(context, Uri.parse(authUrl))
                     },
                     onDisconnect = {
                         scope.launch(Dispatchers.IO) { SecurePreferences(context).apiToken = null }

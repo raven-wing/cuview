@@ -1,4 +1,6 @@
-PACKAGE     := io.github.raven_wing.cuview
+PACKAGE          := io.github.raven_wing.cuview
+MOCK_OAUTH_PORT  := 8765
+MOCK_OAUTH_PID   := /tmp/cuview_mock_oauth.pid
 LAUNCHER    ?= com.google.android.apps.nexuslauncher
 APK         := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
@@ -6,7 +8,7 @@ APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE := app/build/outputs/bundle/release/app-release.aab
 MAESTRO     := $(HOME)/.maestro/bin/maestro
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release mock-oauth-start mock-oauth-stop help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -29,12 +31,14 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	./gradlew assembleReleaseTest
 	adb uninstall $(PACKAGE) || true
 	adb install $(APK_RELEASE_TEST)
+	$(MAKE) mock-oauth-start
 	$(call reset-state)
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 	$(call reset-state)
 	$(MAESTRO) test e2e/flows/02_cancel.yaml
 	$(call reset-state)
 	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	$(MAKE) mock-oauth-stop
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease
@@ -59,15 +63,25 @@ define reset-state
 	adb shell pm clear $(PACKAGE)
 endef
 
-e2e: install ## Build + install + run all E2E flows (state reset between each)
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/02_cancel.yaml
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
+mock-oauth-start: mock-oauth-stop ## Start local mock OAuth server (background); required for E2E
+	python3 e2e/mock_oauth_server.py $(MOCK_OAUTH_PORT) & echo $$! > $(MOCK_OAUTH_PID)
+	sleep 1
 
-e2e-fast: ## Run all E2E flows without rebuilding or clearing state
+mock-oauth-stop: ## Stop local mock OAuth server
+	-kill $$(cat $(MOCK_OAUTH_PID) 2>/dev/null) 2>/dev/null
+	-rm -f $(MOCK_OAUTH_PID)
+
+e2e: install mock-oauth-start ## Build + install + run all E2E flows (state reset between each)
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/02_cancel.yaml
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	$(MAKE) mock-oauth-stop
+
+e2e-fast: mock-oauth-start ## Run all E2E flows without rebuilding or clearing state
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
 	$(MAESTRO) test e2e/flows/02_cancel.yaml
 	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	$(MAKE) mock-oauth-stop
