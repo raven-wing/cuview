@@ -41,7 +41,7 @@ jobs:
 
       - name: Install Maestro
         run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash -s -- --version 2.3.0
+          curl -Ls "https://get.maestro.mobile.dev" | bash -s -- --version 2.4.0
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
       - name: Run emulator + Maestro flows

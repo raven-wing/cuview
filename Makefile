@@ -31,7 +31,12 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	adb install $(APK_RELEASE_TEST)
 	mkdir -p e2e/recordings
 	set -e; \
-	reset() { adb shell pm clear $(LAUNCHER) || true; adb shell pm clear $(PACKAGE); }; \
+	reset() { \
+	  adb shell pm clear $(LAUNCHER) || true; \
+	  adb shell pm clear $(PACKAGE); \
+	  adb shell input keyevent KEYCODE_HOME; \
+	  sleep 3; \
+	}; \
 	rectest() { \
 	  name=$$1; shift; \
 	  adb shell screenrecord --time-limit 180 "/sdcard/$$name.mp4" & \
