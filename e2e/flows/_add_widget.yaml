@@ -24,16 +24,16 @@ appId: io.github.raven_wing.cuview
 
 # ── Search for the widget ─────────────────────────────────────────────────────
 - tapOn: "Search"
-- inputText: "CU View"
+- inputText: "CU"
 - extendedWaitUntil:
     visible: "CU View"
     timeout: 5000
 
 # ── Expand and long-press the preview card ───────────────────────────────────
-# index:1 skips the search-bar text and targets the result-row title.
+# "CU" in the search bar avoids Gboard autocomplete that adds a trailing space
+# and breaks the search. The result row title is the only "CU View" in the tree.
 - tapOn:
     text: "CU View"
-    index: 1
 - extendedWaitUntil:
     visible: "Displays tasks from a CU View"
     timeout: 5000
