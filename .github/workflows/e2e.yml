@@ -47,11 +47,11 @@ jobs:
       - name: Run emulator + Maestro flows
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
         with:
-          api-level: 33
+          api-level: 34
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          emulator-options: -no-snapshot-save -no-window -gpu angle_indirect -noaudio -no-boot-anim
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: make e2e-release
 
       - name: Upload recordings and Maestro report
