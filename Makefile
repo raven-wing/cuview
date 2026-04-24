@@ -59,7 +59,8 @@ lint: ## Run lint checks
 
 mock-oauth-start: mock-oauth-stop ## Start local mock OAuth server (background); required for E2E
 	python3 e2e/mock_oauth_server.py $(MOCK_OAUTH_PORT) & echo $$! > $(MOCK_OAUTH_PID)
-	sleep 1
+	for i in 1 2 3 4 5 6 7 8 9 10; do nc -z localhost $(MOCK_OAUTH_PORT) 2>/dev/null && break || sleep 1; done
+	nc -z localhost $(MOCK_OAUTH_PORT) 2>/dev/null || { echo "ERROR: mock OAuth server did not start" >&2; false; }
 	adb reverse tcp:$(MOCK_OAUTH_PORT) tcp:$(MOCK_OAUTH_PORT)
 
 mock-oauth-stop: ## Stop local mock OAuth server
