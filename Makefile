@@ -1,6 +1,4 @@
 PACKAGE          := io.github.raven_wing.cuview
-MOCK_OAUTH_PORT  := 8765
-MOCK_OAUTH_PID   := /tmp/cuview_mock_oauth.pid
 LAUNCHER    ?= com.google.android.apps.nexuslauncher
 APK         := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
@@ -8,7 +6,7 @@ APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE := app/build/outputs/bundle/release/app-release.aab
 MAESTRO     := $(HOME)/.maestro/bin/maestro
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release mock-oauth-start mock-oauth-stop help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -31,8 +29,7 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	./gradlew assembleReleaseTest
 	adb uninstall $(PACKAGE) || true
 	adb install $(APK_RELEASE_TEST)
-	$(MAKE) mock-oauth-start
-	set -e; trap '$(MAKE) mock-oauth-stop' EXIT; \
+	set -e; \
 	reset() { adb shell pm clear $(LAUNCHER) || true; adb shell pm clear $(PACKAGE); }; \
 	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
 	reset; $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
@@ -57,18 +54,8 @@ lint: ## Run lint checks
 
 # ── e2e ────────────────────────────────────────────────────────────────────────
 
-mock-oauth-start: mock-oauth-stop ## Start local mock OAuth server (background); required for E2E
-	python3 e2e/mock_oauth_server.py $(MOCK_OAUTH_PORT) & echo $$! > $(MOCK_OAUTH_PID)
-	for i in 1 2 3 4 5 6 7 8 9 10; do nc -z localhost $(MOCK_OAUTH_PORT) 2>/dev/null && break || sleep 1; done
-	nc -z localhost $(MOCK_OAUTH_PORT) 2>/dev/null || { echo "ERROR: mock OAuth server did not start" >&2; false; }
-	adb reverse tcp:$(MOCK_OAUTH_PORT) tcp:$(MOCK_OAUTH_PORT)
-
-mock-oauth-stop: ## Stop local mock OAuth server
-	-kill $$(cat $(MOCK_OAUTH_PID) 2>/dev/null) 2>/dev/null
-	-rm -f $(MOCK_OAUTH_PID)
-
-e2e: install mock-oauth-start ## Build + install + run all E2E flows (state reset between each)
-	set -e; trap '$(MAKE) mock-oauth-stop' EXIT; \
+e2e: install ## Build + install + run all E2E flows (state reset between each)
+	set -e; \
 	reset() { adb shell pm clear $(LAUNCHER) || true; adb shell pm clear $(PACKAGE); }; \
 	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
 	reset; $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
@@ -76,8 +63,8 @@ e2e: install mock-oauth-start ## Build + install + run all E2E flows (state rese
 	reset; $(MAESTRO) test e2e/flows/03_reconfigure.yaml
 
 # Skips rebuild and state reset; assumes Chrome is already set up (run e2e or e2e-release first).
-e2e-fast: mock-oauth-start ## Run all E2E flows without rebuilding or clearing state
-	set -e; trap '$(MAKE) mock-oauth-stop' EXIT; \
+e2e-fast: ## Run all E2E flows without rebuilding or clearing state
+	set -e; \
 	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
 	$(MAESTRO) test e2e/flows/02_cancel.yaml; \
 	$(MAESTRO) test e2e/flows/03_reconfigure.yaml

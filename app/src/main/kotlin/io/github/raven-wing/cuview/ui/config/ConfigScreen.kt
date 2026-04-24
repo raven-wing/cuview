@@ -180,17 +180,20 @@ internal fun ConfigScreen(
                     apiToken = if (tokenState is TokenState.Token) tokenState.value else null,
                     oauthError = oauthError,
                     onConnect = {
-                        val state = UUID.randomUUID().toString()
+                        // In mock mode the state is fixed so the E2E flow can fire the
+                        // cuview://oauth/callback intent directly via Maestro's openLink
+                        // without needing a running HTTP server or adb reverse tunnel.
+                        val state = if (BuildConfig.USE_MOCK_API) "mock_e2e_state"
+                                    else UUID.randomUUID().toString()
                         // Persist state before launching the CCT so handleOAuthCallback /
                         // handleOAuthIntent can validate it even if the process is recreated.
                         context.getSharedPreferences(WidgetConfigActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
                             .edit().putString(WidgetConfigActivity.KEY_PENDING_STATE, state).apply()
                         val authUrl = if (BuildConfig.USE_MOCK_API) {
-                            // Point at the local mock OAuth server (e2e/mock_oauth_server.py)
-                            // running on the host machine. This exercises the full Chrome CCT →
-                            // intent:// → handleOAuthCallback path, including Chrome's task-switching
-                            // behaviour, without real ClickUp credentials.
-                            // Port must match MOCK_OAUTH_PORT in mock_oauth_server.py.
+                            // Open Chrome CCT so its task enters the recents stack — needed
+                            // to reproduce the "back to Chrome" regression (flow 01). Whether
+                            // the page loads is irrelevant; the OAuth callback is fired by
+                            // Maestro's openLink rather than via network.
                             "http://localhost:8765/?state=$state"
                         } else {
                             val redirectUri = Uri.encode(BuildConfig.CLOUDFLARE_WORKER_URL)
