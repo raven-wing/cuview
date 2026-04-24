@@ -35,7 +35,7 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	  adb shell pm clear $(LAUNCHER) || true; \
 	  adb shell pm clear $(PACKAGE); \
 	  adb shell input keyevent KEYCODE_HOME; \
-	  sleep 3; \
+	  sleep 5; \
 	}; \
 	rectest() { \
 	  name=$$1; shift; \

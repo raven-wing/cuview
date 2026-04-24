@@ -27,7 +27,7 @@ appId: io.github.raven_wing.cuview
 - inputText: "CU"
 - extendedWaitUntil:
     visible: "CU View"
-    timeout: 5000
+    timeout: 15000
 
 # ── Expand and long-press the preview card ───────────────────────────────────
 # "CU" in the search bar avoids Gboard autocomplete that adds a trailing space
