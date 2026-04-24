@@ -20,7 +20,7 @@ appId: io.github.raven_wing.cuview
 # launches WCA without EXTRA_APPWIDGET_ID and WCA exits immediately.
 - pressKey: Back
 - longPressOn:
-    point: "50%, 60%"
+    point: "50%, 47%"
 - tapOn: "Change widget settings"
 
 # Wait for WidgetConfigActivity to finish its onCreate IO work and call setContent.
