@@ -52,31 +52,14 @@ jobs:
           arch: x86_64
           profile: pixel_6
           emulator-options: -no-snapshot-save -no-window -gpu angle_indirect -noaudio -no-boot-anim
-          script: |
-            set -e
-            PACKAGE=io.github.raven_wing.cuview
-            LAUNCHER=com.google.android.apps.nexuslauncher
-            APK=app/build/outputs/apk/releaseTest/app-releaseTest.apk
-            MAESTRO="$HOME/.maestro/bin/maestro"
-            RECORDINGS="$HOME/e2e-recordings"
-            mkdir -p "$RECORDINGS"
+          script: make e2e-release
 
-            adb uninstall "$PACKAGE" || true
-            adb install "$APK"
-
-            reset() { adb shell pm clear "$LAUNCHER" || true; adb shell pm clear "$PACKAGE"; }
-
-            "$MAESTRO" record --local e2e/flows/00_chrome_setup.yaml "$RECORDINGS/00_chrome_setup.mp4"
-            reset; "$MAESTRO" record --local e2e/flows/01_disconnect_reconnect.yaml "$RECORDINGS/01_disconnect_reconnect.mp4"
-            reset; "$MAESTRO" record --local e2e/flows/02_cancel.yaml "$RECORDINGS/02_cancel.mp4"
-            reset; "$MAESTRO" record --local e2e/flows/03_reconfigure.yaml "$RECORDINGS/03_reconfigure.mp4"
-
-      - name: Upload recordings and report
+      - name: Upload recordings and Maestro report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: e2e-artifacts
           path: |
-            ~/e2e-recordings/
+            e2e/recordings/
             ~/.maestro/tests/
           retention-days: 7

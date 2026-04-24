@@ -29,12 +29,21 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	./gradlew assembleReleaseTest
 	adb uninstall $(PACKAGE) || true
 	adb install $(APK_RELEASE_TEST)
+	mkdir -p e2e/recordings
 	set -e; \
 	reset() { adb shell pm clear $(LAUNCHER) || true; adb shell pm clear $(PACKAGE); }; \
+	rectest() { \
+	  name=$$1; shift; \
+	  adb shell screenrecord --time-limit 180 "/sdcard/$$name.mp4" & \
+	  STATUS=0; "$$@" || STATUS=$$?; \
+	  adb shell pkill -2 screenrecord 2>/dev/null || true; sleep 2; \
+	  adb pull "/sdcard/$$name.mp4" "e2e/recordings/$$name.mp4" 2>/dev/null || true; \
+	  return $$STATUS; \
+	}; \
 	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
-	reset; $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
-	reset; $(MAESTRO) test e2e/flows/02_cancel.yaml; \
-	reset; $(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	reset; rectest 01_disconnect_reconnect $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
+	reset; rectest 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml; \
+	reset; rectest 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease
