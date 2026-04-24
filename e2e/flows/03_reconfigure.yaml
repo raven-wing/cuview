@@ -16,9 +16,9 @@ appId: io.github.raven_wing.cuview
 - assertNotVisible: "Save & Add Widget"
 
 # Re-open config via long-press → Edit widget.
-# After placement the widget is in resize mode; press Back to deselect, then
-# press Home to ensure we are on the home screen before the long press.
-# Glance widget is not in the a11y tree — must use screen coordinates.
+# Back exits the resize-mode overlay first; without it the Pixel Launcher
+# launches WCA without EXTRA_APPWIDGET_ID and WCA exits immediately.
+- pressKey: Back
 - longPressOn:
     point: "50%, 60%"
 - tapOn: "Change widget settings"

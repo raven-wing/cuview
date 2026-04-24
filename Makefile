@@ -45,7 +45,6 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	  adb pull "/sdcard/$$name.mp4" "e2e/recordings/$$name.mp4" 2>/dev/null || true; \
 	  return $$STATUS; \
 	}; \
-	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
 	reset; rectest 01_disconnect_reconnect $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
 	reset; rectest 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml; \
 	reset; rectest 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml
