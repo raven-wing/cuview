@@ -32,7 +32,7 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	mkdir -p e2e/recordings
 	set -e; \
 	reset() { \
-	  adb shell pm clear $(LAUNCHER) || true; \
+	  adb shell am force-stop $(LAUNCHER) || true; \
 	  adb shell pm clear $(PACKAGE); \
 	  adb shell input keyevent KEYCODE_HOME; \
 	  sleep 5; \

@@ -4,13 +4,14 @@
 # Post-condition: WidgetConfigActivity is open ("Configure CU View" is visible).
 #
 # Pixel Launcher widget placement:
-#   long-press empty home screen space → tap "Widgets" → search "CU View" →
-#   pressKey:Back (dismiss keyboard) → tap row[index:1] to expand →
-#   long-press preview card → launcher opens WidgetConfigActivity.
+#   long-press empty home screen space → tap "Widgets" → search "CU" →
+#   tap result row to expand → long-press preview card →
+#   launcher opens WidgetConfigActivity.
 #
+# Search input is "CU" not "CU View": typing a complete English word ("View")
+# causes Gboard autocomplete to append a trailing space → no results.
 # Using search avoids the unpredictable scroll/pin behaviour that differs
 # between host-GPU (local) and software-GPU (CI) rendering modes.
-# index:1 skips the search-bar's own "CU View" text and targets the row title.
 appId: io.github.raven_wing.cuview
 ---
 # ── Open the widget picker ────────────────────────────────────────────────────
