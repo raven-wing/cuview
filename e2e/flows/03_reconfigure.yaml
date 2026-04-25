@@ -19,8 +19,10 @@ appId: io.github.raven_wing.cuview
 # Back exits the resize-mode overlay first; without it the Pixel Launcher
 # launches WCA without EXTRA_APPWIDGET_ID and WCA exits immediately.
 - pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 3000
 - longPressOn:
-    point: "50%, 47%"
+    point: "50%, 60%"
 - tapOn: "Change widget settings"
 
 # Wait for WidgetConfigActivity to finish its onCreate IO work and call setContent.

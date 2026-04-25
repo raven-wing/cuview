@@ -68,6 +68,9 @@ lint: ## Run lint checks
 # ── e2e ────────────────────────────────────────────────────────────────────────
 
 e2e: install ## Build + install + run all E2E flows (state reset between each)
+	adb shell settings put global window_animation_scale 1
+	adb shell settings put global transition_animation_scale 1
+	adb shell settings put global animator_duration_scale 1
 	set -e; \
 	reset() { adb shell pm clear $(LAUNCHER) || true; adb shell pm clear $(PACKAGE); }; \
 	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
