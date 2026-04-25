@@ -15,9 +15,11 @@
 appId: io.github.raven_wing.cuview
 ---
 # ── Open the widget picker ────────────────────────────────────────────────────
+# Long-press the RIGHT side of the screen (80%) so the touch lands on empty
+# space even when a leftover widget from a previous flow occupies ~24–58% width.
 - pressKey: Home
 - longPressOn:
-    point: "50%, 40%"
+    point: "80%, 40%"
 - extendedWaitUntil:
     visible: "Widgets"
     timeout: 5000
