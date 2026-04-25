@@ -1,5 +1,6 @@
 PACKAGE          := io.github.raven_wing.cuview
 LAUNCHER    ?= com.google.android.apps.nexuslauncher
+MAESTRO_VERSION  := 2.4.0
 APK         := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
 APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
@@ -30,6 +31,9 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	adb uninstall $(PACKAGE) || true
 	adb install $(APK_RELEASE_TEST)
 	mkdir -p e2e/recordings
+	adb shell settings put global window_animation_scale 0
+	adb shell settings put global transition_animation_scale 0
+	adb shell settings put global animator_duration_scale 0
 	set -e; \
 	reset() { \
 	  adb shell pm clear $(LAUNCHER) || true; \
@@ -82,11 +86,19 @@ lint: ## Run lint checks
 # ── e2e ────────────────────────────────────────────────────────────────────────
 
 e2e: install ## Build + install + run all E2E flows (state reset between each)
-	adb shell settings put global window_animation_scale 1
-	adb shell settings put global transition_animation_scale 1
-	adb shell settings put global animator_duration_scale 1
+	adb shell settings put global window_animation_scale 0
+	adb shell settings put global transition_animation_scale 0
+	adb shell settings put global animator_duration_scale 0
 	set -e; \
-	reset() { adb shell pm clear $(LAUNCHER) || true; adb shell pm clear $(PACKAGE); }; \
+	reset() { \
+	  adb shell pm clear $(LAUNCHER) || true; \
+	  adb shell pm clear $(PACKAGE); \
+	  adb shell input keyevent KEYCODE_HOME; \
+	  sleep 3; \
+	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
+	  adb shell pm enable $(PACKAGE) 2>/dev/null || true; \
+	  sleep 3; \
+	}; \
 	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
 	reset; $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
 	reset; $(MAESTRO) test e2e/flows/02_cancel.yaml; \

@@ -16,13 +16,19 @@ appId: io.github.raven_wing.cuview
 - assertNotVisible: "Save & Add Widget"
 
 # Re-open config via long-press → Edit widget.
-# Back exits the resize-mode overlay first; without it the Pixel Launcher
-# launches WCA without EXTRA_APPWIDGET_ID and WCA exits immediately.
+# Back exits the resize-mode overlay. Wait until "Change widget settings" is gone
+# from the a11y tree — that confirms the overlay window has fully exited and the
+# home screen touch system is ready. A fixed waitForAnimationToEnd is not enough
+# on swiftshader (CI) because the input system lags behind the visual animation.
 - pressKey: Back
-- waitForAnimationToEnd:
-    timeout: 3000
+- extendedWaitUntil:
+    notVisible: "Change widget settings"
+    timeout: 10000
 - longPressOn:
     point: "50%, 40%"
+- extendedWaitUntil:
+    visible: "Change widget settings"
+    timeout: 5000
 - tapOn: "Change widget settings"
 
 # Wait for WidgetConfigActivity to finish its onCreate IO work and call setContent.
