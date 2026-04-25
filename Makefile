@@ -39,11 +39,10 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	reset() { \
 	  adb shell pm clear $(LAUNCHER) || true; \
 	  adb shell pm clear $(PACKAGE); \
-	  adb shell input keyevent KEYCODE_HOME; \
-	  sleep 3; \
 	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
 	  adb shell pm enable $(PACKAGE) 2>/dev/null || true; \
-	  sleep 3; \
+	  adb shell input keyevent KEYCODE_HOME; \
+	  sleep 6; \
 	}; \
 	rectest() { \
 	  name=$$1; shift; \
@@ -98,11 +97,10 @@ e2e: install ## Build + install + run all E2E flows (state reset between each)
 	reset() { \
 	  adb shell pm clear $(LAUNCHER) || true; \
 	  adb shell pm clear $(PACKAGE); \
-	  adb shell input keyevent KEYCODE_HOME; \
-	  sleep 3; \
 	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
 	  adb shell pm enable $(PACKAGE) 2>/dev/null || true; \
-	  sleep 3; \
+	  adb shell input keyevent KEYCODE_HOME; \
+	  sleep 6; \
 	}; \
 	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
 	reset; $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
