@@ -6,7 +6,7 @@ APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE := app/build/outputs/bundle/release/app-release.aab
 MAESTRO     := $(HOME)/.maestro/bin/maestro
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release e2e-act help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -32,10 +32,13 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	mkdir -p e2e/recordings
 	set -e; \
 	reset() { \
-	  adb shell am force-stop $(LAUNCHER) || true; \
+	  adb shell pm clear $(LAUNCHER) || true; \
 	  adb shell pm clear $(PACKAGE); \
 	  adb shell input keyevent KEYCODE_HOME; \
-	  sleep 5; \
+	  sleep 3; \
+	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
+	  adb shell pm enable $(PACKAGE) 2>/dev/null || true; \
+	  sleep 3; \
 	}; \
 	rectest() { \
 	  name=$$1; shift; \
@@ -48,6 +51,17 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	reset; rectest 01_disconnect_reconnect $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
 	reset; rectest 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml; \
 	reset; rectest 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml
+
+# Runs the CI workflow locally via act + Podman.
+# Uses catthehacker/ubuntu:full-22.04 which matches ubuntu-latest (Android SDK + ANDROID_HOME included).
+# Gradle cache is shared with the host to avoid re-downloading on each run.
+# First run will download the API 34 google_apis system image (~1.5 GB).
+e2e-act: ## Run CI E2E workflow locally via act + Podman (mirrors ubuntu-latest)
+	act -W .github/workflows/e2e.yml \
+	  -P ubuntu-latest=catthehacker/ubuntu:full-22.04 \
+	  --container-options "--device /dev/kvm --privileged -v $(HOME)/.gradle:/root/.gradle" \
+	  -j e2e \
+	  --container-daemon-socket "unix:///run/user/$$(id -u)/podman/podman.sock"
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease
