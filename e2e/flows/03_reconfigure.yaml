@@ -25,7 +25,7 @@ appId: io.github.raven_wing.cuview
     notVisible: "Change widget settings"
     timeout: 10000
 - longPressOn:
-    point: "50%, 40%"
+    point: "50%, 47%"
 - extendedWaitUntil:
     visible: "Change widget settings"
     timeout: 5000
