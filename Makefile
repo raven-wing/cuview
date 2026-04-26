@@ -37,6 +37,7 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	adb shell settings put global animator_duration_scale 0
 	set -e; \
 	reset() { \
+	  adb shell am force-stop $(LAUNCHER) 2>/dev/null || true; \
 	  adb shell pm clear $(LAUNCHER) || true; \
 	  adb shell pm clear $(PACKAGE); \
 	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
@@ -95,6 +96,7 @@ e2e: install ## Build + install + run all E2E flows (state reset between each)
 	adb shell settings put global animator_duration_scale 0
 	set -e; \
 	reset() { \
+	  adb shell am force-stop $(LAUNCHER) 2>/dev/null || true; \
 	  adb shell pm clear $(LAUNCHER) || true; \
 	  adb shell pm clear $(PACKAGE); \
 	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
