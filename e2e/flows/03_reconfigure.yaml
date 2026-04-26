@@ -16,15 +16,25 @@ appId: io.github.raven_wing.cuview
 - assertNotVisible: "Save & Add Widget"
 
 # Re-open config via long-press → Edit widget.
-# After placement the widget is in resize mode; press Back to deselect, then
-# press Home to ensure we are on the home screen before the long press.
-# Glance widget is not in the a11y tree — must use screen coordinates.
+# Back exits the resize-mode overlay. Wait until "Change widget settings" is gone
+# from the a11y tree — that confirms the overlay window has fully exited and the
+# home screen touch system is ready. A fixed waitForAnimationToEnd is not enough
+# on swiftshader (CI) because the input system lags behind the visual animation.
+- pressKey: Back
+- extendedWaitUntil:
+    notVisible: "Change widget settings"
+    timeout: 10000
 - longPressOn:
-    point: "50%, 60%"
+    point: "50%, 47%"
+- extendedWaitUntil:
+    visible: "Change widget settings"
+    timeout: 5000
 - tapOn: "Change widget settings"
 
-# Change theme to Light.
-- assertVisible: "Save Changes"
+# Wait for WidgetConfigActivity to finish its onCreate IO work and call setContent.
+- extendedWaitUntil:
+    visible: "Save Changes"
+    timeout: 15000
 - tapOn: "Light"
 
 # Change the selected view to Zebra (Mammals → Hoofed Animals → Zebra).

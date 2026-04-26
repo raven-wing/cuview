@@ -4,19 +4,22 @@
 # Post-condition: WidgetConfigActivity is open ("Configure CU View" is visible).
 #
 # Pixel Launcher widget placement:
-#   long-press empty home screen space → tap "Widgets" → search "CU View" →
-#   pressKey:Back (dismiss keyboard) → tap row[index:1] to expand →
-#   long-press preview card → launcher opens WidgetConfigActivity.
+#   long-press empty home screen space → tap "Widgets" → search "CU" →
+#   tap result row to expand → long-press preview card →
+#   launcher opens WidgetConfigActivity.
 #
+# Search input is "CU" not "CU View": typing a complete English word ("View")
+# causes Gboard autocomplete to append a trailing space → no results.
 # Using search avoids the unpredictable scroll/pin behaviour that differs
 # between host-GPU (local) and software-GPU (CI) rendering modes.
-# index:1 skips the search-bar's own "CU View" text and targets the row title.
 appId: io.github.raven_wing.cuview
 ---
 # ── Open the widget picker ────────────────────────────────────────────────────
+# Long-press the RIGHT side of the screen (80%) so the touch lands on empty
+# space even when a leftover widget from a previous flow occupies ~24–58% width.
 - pressKey: Home
 - longPressOn:
-    point: "50%, 40%"
+    point: "80%, 40%"
 - extendedWaitUntil:
     visible: "Widgets"
     timeout: 5000
@@ -24,16 +27,16 @@ appId: io.github.raven_wing.cuview
 
 # ── Search for the widget ─────────────────────────────────────────────────────
 - tapOn: "Search"
-- inputText: "CU View"
+- inputText: "CU"
 - extendedWaitUntil:
     visible: "CU View"
-    timeout: 5000
+    timeout: 20000
 
 # ── Expand and long-press the preview card ───────────────────────────────────
-# index:1 skips the search-bar text and targets the result-row title.
+# "CU" in the search bar avoids Gboard autocomplete that adds a trailing space
+# and breaks the search. The result row title is the only "CU View" in the tree.
 - tapOn:
     text: "CU View"
-    index: 1
 - extendedWaitUntil:
     visible: "Displays tasks from a CU View"
     timeout: 5000

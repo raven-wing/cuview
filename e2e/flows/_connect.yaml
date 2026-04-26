@@ -1,17 +1,22 @@
-# Subflow: tap "Connect with ClickUp" → wait for "Connected ✓".
+# Subflow: tap "Connect with ClickUp" → fire OAuth callback → wait for "Connected ✓".
 #
 # Pre-condition:  WidgetConfigActivity is visible with "Connect with ClickUp" button.
 # Post-condition: "Connected ✓" is visible.
 #
-# Mock mode  (USE_MOCK_API=true): connects instantly, no browser opens.
-# Real mode  (USE_MOCK_API=false): Chrome Custom Tab opens for ClickUp OAuth.
-#   The Cloudflare Worker fires an intent:// callback which brings MainActivity
+# Mock mode (USE_MOCK_API=true):
+#   1. Tapping "Connect with ClickUp" opens a Chrome Custom Tab (creating a Chrome task
+#      in the recents stack — necessary for the "back to Chrome" regression in flow 01).
+#   2. openLink fires cuview://oauth/callback directly via Android's intent dispatch,
+#      bypassing any network dependency. The fixed state "mock_e2e_state" matches what
+#      ConfigScreen stores before launching the CCT when USE_MOCK_API=true.
+#   3. WidgetConfigActivity.handleOAuthCallback saves the token and brings WCA to front.
+# Real mode (USE_MOCK_API=false): Chrome Custom Tab opens for ClickUp OAuth.
+#   The Cloudflare Worker fires an intent:// callback which brings WidgetConfigActivity
 #   to the front; "Connected ✓" appears once the token is saved.
-#   Chrome interaction (tapping "Connect Workspace") must happen out-of-band
-#   during a real-mode run.
 appId: io.github.raven_wing.cuview
 ---
 - tapOn: "Connect with ClickUp"
+- openLink: "cuview://oauth/callback?token=mock_token&state=mock_e2e_state"
 - extendedWaitUntil:
     visible: "Connected ✓"
     timeout: 30000

@@ -1,0 +1,19 @@
+# Setup flow: dismiss Chrome's First Run Experience on fresh emulators.
+#
+# Chrome shows FRE the very first time it starts on a device/emulator. On CI
+# every run gets a clean emulator, so FRE always appears and blocks the CCT
+# page from loading. This flow launches Chrome once, dismisses FRE with
+# optional taps (no-ops if already dismissed), then stops Chrome so each test
+# flow starts from a clean state.
+appId: com.android.chrome
+---
+- launchApp:
+    appId: com.android.chrome
+- tapOn:
+    text: "Accept & continue"
+    optional: true
+- tapOn:
+    text: "No thanks"
+    optional: true
+- stopApp:
+    appId: com.android.chrome

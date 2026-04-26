@@ -1,12 +1,14 @@
-PACKAGE     := io.github.raven_wing.cuview
+PACKAGE          := io.github.raven_wing.cuview
 LAUNCHER    ?= com.google.android.apps.nexuslauncher
+MAESTRO_VERSION  := 2.4.0
 APK         := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE := app/build/outputs/apk/release/app-release.apk
 APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE := app/build/outputs/bundle/release/app-release.aab
 MAESTRO     := $(HOME)/.maestro/bin/maestro
+AVD_NAME    := pixel_6_api34_google_apis
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-fast e2e-release e2e-act start-emulator help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -29,12 +31,46 @@ e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all 
 	./gradlew assembleReleaseTest
 	adb uninstall $(PACKAGE) || true
 	adb install $(APK_RELEASE_TEST)
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/02_cancel.yaml
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	mkdir -p e2e/recordings
+	adb shell settings put global window_animation_scale 0
+	adb shell settings put global transition_animation_scale 0
+	adb shell settings put global animator_duration_scale 0
+	set -e; \
+	reset() { \
+	  adb shell am force-stop $(LAUNCHER) 2>/dev/null || true; \
+	  adb shell pm clear $(LAUNCHER) || true; \
+	  adb shell pm clear $(PACKAGE); \
+	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
+	  adb shell pm enable $(PACKAGE) 2>/dev/null || true; \
+	  adb shell input keyevent KEYCODE_HOME; \
+	  sleep 6; \
+	}; \
+	rectest() { \
+	  name=$$1; shift; \
+	  adb shell screenrecord --time-limit 180 "/sdcard/$$name.mp4" & \
+	  STATUS=0; "$$@" || STATUS=$$?; \
+	  adb shell pkill -2 screenrecord 2>/dev/null || true; sleep 2; \
+	  adb pull "/sdcard/$$name.mp4" "e2e/recordings/$$name.mp4" 2>/dev/null || true; \
+	  return $$STATUS; \
+	}; \
+	reset; rectest 01_disconnect_reconnect $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
+	reset; rectest 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml; \
+	reset; rectest 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml
+
+# Runs the CI workflow locally via act + Podman.
+# Uses catthehacker/ubuntu:full-22.04 which matches ubuntu-latest (Android SDK + ANDROID_HOME included).
+# Gradle cache is shared with the host to avoid re-downloading on each run.
+# First run will download the API 34 google_apis system image (~1.5 GB).
+e2e-act: ## Run CI E2E workflow locally via act + Podman (mirrors ubuntu-latest)
+	act -W .github/workflows/e2e.yml \
+	  -P ubuntu-latest=catthehacker/ubuntu:full-22.04 \
+	  --container-options "--device /dev/kvm --privileged -v $(HOME)/.gradle:/root/.gradle" \
+	  -j e2e \
+	  --container-daemon-socket "unix:///run/user/$$(id -u)/podman/podman.sock"
+
+start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, swiftshader) — run before e2e-release
+	emulator -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save -accel on -gpu host -noaudio -no-boot-anim &
+	adb wait-for-device shell 'while [[ "$$(getprop sys.boot_completed)" != "1" ]]; do sleep 2; done'
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease
@@ -54,20 +90,28 @@ lint: ## Run lint checks
 
 # ── e2e ────────────────────────────────────────────────────────────────────────
 
-define reset-state
-	-adb shell pm clear $(LAUNCHER)
-	adb shell pm clear $(PACKAGE)
-endef
-
 e2e: install ## Build + install + run all E2E flows (state reset between each)
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/02_cancel.yaml
-	$(call reset-state)
-	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	adb shell settings put global window_animation_scale 0
+	adb shell settings put global transition_animation_scale 0
+	adb shell settings put global animator_duration_scale 0
+	set -e; \
+	reset() { \
+	  adb shell am force-stop $(LAUNCHER) 2>/dev/null || true; \
+	  adb shell pm clear $(LAUNCHER) || true; \
+	  adb shell pm clear $(PACKAGE); \
+	  adb shell pm disable $(PACKAGE) 2>/dev/null || true; \
+	  adb shell pm enable $(PACKAGE) 2>/dev/null || true; \
+	  adb shell input keyevent KEYCODE_HOME; \
+	  sleep 6; \
+	}; \
+	$(MAESTRO) test e2e/flows/00_chrome_setup.yaml; \
+	reset; $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
+	reset; $(MAESTRO) test e2e/flows/02_cancel.yaml; \
+	reset; $(MAESTRO) test e2e/flows/03_reconfigure.yaml
 
+# Skips rebuild and state reset; assumes Chrome is already set up (run e2e or e2e-release first).
 e2e-fast: ## Run all E2E flows without rebuilding or clearing state
-	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
-	$(MAESTRO) test e2e/flows/02_cancel.yaml
+	set -e; \
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml; \
+	$(MAESTRO) test e2e/flows/02_cancel.yaml; \
 	$(MAESTRO) test e2e/flows/03_reconfigure.yaml
