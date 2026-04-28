@@ -180,11 +180,7 @@ internal fun ConfigScreen(
                     apiToken = if (tokenState is TokenState.Token) tokenState.value else null,
                     oauthError = oauthError,
                     onConnect = {
-                        // In mock mode the state is fixed so the local mock OAuth server
-                        // can validate it (and the E2E flow can fire the cuview://oauth/callback
-                        // intent directly via Maestro's openLink as a fallback if needed).
-                        val state = if (BuildConfig.USE_MOCK_API) "mock_e2e_state"
-                                    else UUID.randomUUID().toString()
+                        val state = UUID.randomUUID().toString()
                         // Persist state before launching the CCT so handleOAuthCallback /
                         // handleOAuthIntent can validate it even if the process is recreated.
                         context.getSharedPreferences(WidgetConfigActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
