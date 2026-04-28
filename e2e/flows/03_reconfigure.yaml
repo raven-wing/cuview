@@ -1,11 +1,12 @@
-# Flow 03: reconfigure — full happy path, then long-press widget → Edit → change theme
-# and view → save → verify config screen closes.
+# Flow 03: reconfigure — full happy path, then re-open config via "Change widget
+# settings" → change theme and view → save → verify config screen closes.
 #
 # Covers: theme change (regression for theme captured outside provideContent),
 # view change, and reconfigure mode ("Save Changes" button instead of "Save & Add Widget").
 appId: io.github.raven_wing.cuview
 ---
 # Place and configure widget (reuse connect + browse subflows).
+- runFlow: ./_chrome_setup.yaml
 - runFlow: ./_add_widget.yaml
 - assertVisible: "Connect with ClickUp"
 - runFlow: ./_connect.yaml
@@ -15,16 +16,23 @@ appId: io.github.raven_wing.cuview
 - tapOn: "Save & Add Widget"
 - assertNotVisible: "Save & Add Widget"
 
-# Re-open config via long-press → Edit widget.
-# After placement the widget is in resize mode; press Back to deselect, then
-# press Home to ensure we are on the home screen before the long press.
-# Glance widget is not in the a11y tree — must use screen coordinates.
-- longPressOn:
-    point: "50%, 60%"
+# Re-open config via the resize overlay → "Change widget settings".
+# Pixel Launcher shows the resize overlay automatically after Save & Add Widget. The
+# overlay's "Change widget settings" entry triggers WidgetConfigActivity in reconfigure
+# mode — same code path as long-pressing a placed widget and choosing Edit, just a more
+# reliable entry point. Long-pressing a Glance widget on swiftshader is flaky: the
+# launcher's popup either fails to appear (chrome) or is intercepted by tile click
+# handlers (rows). The reconfigure path under test (Save Changes vs Save & Add Widget)
+# is the same regardless of how the user opened the config screen.
+- extendedWaitUntil:
+    visible: "Change widget settings"
+    timeout: 10000
 - tapOn: "Change widget settings"
 
-# Change theme to Light.
-- assertVisible: "Save Changes"
+# Wait for WidgetConfigActivity to finish its onCreate IO work and call setContent.
+- extendedWaitUntil:
+    visible: "Save Changes"
+    timeout: 15000
 - tapOn: "Light"
 
 # Change the selected view to Zebra (Mammals → Hoofed Animals → Zebra).

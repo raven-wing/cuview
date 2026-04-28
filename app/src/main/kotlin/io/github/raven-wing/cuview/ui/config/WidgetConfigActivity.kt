@@ -81,6 +81,7 @@ class WidgetConfigActivity : ComponentActivity() {
     private var tokenState by mutableStateOf<TokenState>(TokenState.Loading)
     var pendingOAuthResult by mutableStateOf<OAuthResult?>(null)
         private set
+    private var configSaved = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -148,6 +149,21 @@ class WidgetConfigActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // By the time onStop fires, the launcher has already received RESULT_OK via
+        // onActivityResult (delivered during our onPause) and placed the widget.
+        // Fire HOME now to preempt Chrome's CCT task from winning the foreground after
+        // we finish — Chrome was opened with FLAG_ACTIVITY_NEW_TASK and Android would
+        // otherwise resume it as the next most-recently-used task.
+        if (isFinishing && configSaved) {
+            startActivity(Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
         }
     }
 
@@ -257,6 +273,7 @@ class WidgetConfigActivity : ComponentActivity() {
             TaskSyncWorker.enqueuePeriodicSync(this@WidgetConfigActivity, widgetIdCapture)
             setResult(RESULT_OK, Intent().apply { putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetIdCapture) })
             if (BuildConfig.DEBUG) Log.d("WCA", "onConfigSaved: setResult(RESULT_OK) widgetId=$widgetIdCapture")
+            configSaved = true
             finish()
         }
     }

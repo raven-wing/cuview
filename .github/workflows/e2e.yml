@@ -18,14 +18,13 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      # KVM is needed for hardware-accelerated emulator on ubuntu runners
-      - name: Enable KVM
+      - name: Enable KVM group perms
+        if: ${{ env.ACT != 'true' }}
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
+          sudo udevadm trigger
+          sudo chmod 666 /dev/kvm
 
       - name: Set up Java 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
@@ -40,10 +39,21 @@ jobs:
         run: ./gradlew assembleReleaseTest
 
       - name: Install Maestro
+        env:
+          MAESTRO_VERSION: "2.4.0"
         run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash -s -- --version 2.3.0
+          curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
+      # `-gpu swangle_indirect` (ANGLE on SwiftShader, pure CPU) is the only
+      # backend that satisfies both:
+      #   - ANGLE API → Pixel Launcher's drag-overlay receives the reconfigure
+      #     pencil tap (flow 03). Under raw `swiftshader_indirect` it's dropped.
+      #   - SwiftShader backend → Chrome 113's GPU compositor doesn't segfault
+      #     during CCT page load (flow 01). Under `angle_indirect` on a GPU-less
+      #     runner, CompositorGpuTh hits a null vtable pointer (SIGSEGV) and
+      #     respawns in a crash loop, blocking the OAuth page from rendering.
+      # Local Makefile mirrors this for environment parity.
       - name: Run emulator + Maestro flows
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
         with:
@@ -51,13 +61,15 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          emulator-options: -no-snapshot-save -no-window -gpu angle_indirect -noaudio -no-boot-anim
+          emulator-options: -no-snapshot-save -no-window -gpu swangle_indirect -noaudio -no-boot-anim
           script: make e2e-release
 
-      - name: Upload Maestro report on failure
-        if: failure()
+      - name: Upload recordings and Maestro report
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: maestro-report
-          path: ~/.maestro/tests/
+          name: e2e-artifacts
+          path: |
+            e2e/recordings/
+            ~/.maestro/tests/
           retention-days: 7

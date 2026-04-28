@@ -1,0 +1,19 @@
+# Subflow: dismiss Chrome's First Run Experience.
+#
+# Chrome shows FRE the first time it starts on a device/emulator AND after
+# `pm clear com.android.chrome` (which reset-state runs between flows so each
+# flow truly starts fresh). FRE blocks the CCT page from loading, so any flow
+# that opens a Chrome Custom Tab must run this first. The taps are marked
+# `optional: true` so this is a no-op if FRE is already dismissed.
+appId: com.android.chrome
+---
+- launchApp:
+    appId: com.android.chrome
+# Newer Chrome FRE (Android 14+, Chrome ~120+): account setup screen with two
+# choices, then a sync prompt. Older flow had "Accept & continue" / "No thanks".
+# All taps are optional so this is a no-op if Chrome doesn't show that dialog.
+- tapOn:
+    text: "Use without an account"
+    optional: true
+- stopApp:
+    appId: com.android.chrome
