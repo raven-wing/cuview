@@ -14,7 +14,7 @@ appId: io.github.raven_wing.cuview
 - tapOn: "Connect with ClickUp"
 - extendedWaitUntil:
     visible: "Connect Workspace"
-    timeout: 90000
+    timeout: 60000
 - tapOn: "Connect Workspace"
 - extendedWaitUntil:
     visible: "Connected ✓"

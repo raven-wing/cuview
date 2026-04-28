@@ -18,5 +18,7 @@ appId: com.android.chrome
 # All taps are optional so this is a no-op if Chrome doesn't show that dialog.
 - tapOn:
     text: "Use without an account"
-    optional: true
+- extendedWaitUntil:
+    notVisible: "Use without an account"
+    timeout: 10000
 - pressKey: Home
