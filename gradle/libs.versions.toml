@@ -35,7 +35,7 @@ lint-api = { group = "com.android.tools.lint", name = "lint-api", version.ref = 
 lint-tests = { group = "com.android.tools.lint", name = "lint-tests", version.ref = "lint" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
-androidx-test-core = { group = "androidx.test", name = "core-ktx", version = "1.6.1" }
+androidx-test-core = { group = "androidx.test", name = "core-ktx", version = "1.7.0" }
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
 [plugins]
