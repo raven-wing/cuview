@@ -10,12 +10,15 @@ AAB_RELEASE      := app/build/outputs/bundle/release/app-release.aab
 MAESTRO          := $(HOME)/.maestro/bin/maestro
 AVD_NAME         := pixel_6_api34_google_apis
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-act start-emulator mock-oauth-start mock-oauth-stop help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e-fast e2e-release e2e-act start-emulator mock-oauth-start mock-oauth-stop help
 
 # ── shared: state reset between flows ──────────────────────────────────────────
-# Wipes launcher widget index and cuview data, cycles the cuview package so the
-# AppWidget service rebinds providers, restores the home screen, then polls until
-# cuview's widget provider is re-registered (a fixed sleep is unreliable on CI).
+# Used by e2e-release and e2e-fast to put the device back to a clean state between
+# Maestro flows: launcher widget index wiped, cuview data cleared, cuview package
+# cycled (so the AppWidget service rebinds providers), home screen restored, and
+# a poll until cuview's widget provider is re-registered. Was previously a shell
+# function inside one big recipe; promoted to a `define` so multiple targets
+# can share it via `$(call reset-state)`.
 define reset-state
 	adb shell am force-stop $(LAUNCHER) 2>/dev/null || true
 	adb shell am force-stop com.android.chrome 2>/dev/null || true
@@ -53,7 +56,7 @@ build-release: ## Build release APK (signed; set keystore.* in local.properties 
 install-release: build-release ## Build and install release APK on connected device
 	adb install -r $(APK_RELEASE)
 
-e2e: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all E2E flows
+e2e-release: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all E2E flows
 	./gradlew assembleReleaseTest
 	adb uninstall $(PACKAGE) || true
 	adb install $(APK_RELEASE_TEST)
@@ -107,7 +110,7 @@ mock-oauth-stop: ## Stop local mock OAuth server (no-op if not running)
 	-@kill $$(cat $(MOCK_OAUTH_PID) 2>/dev/null) 2>/dev/null
 	@rm -f $(MOCK_OAUTH_PID)
 
-start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — run before make e2e
+start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — run before e2e-release
 	# Both local and CI use `-gpu swangle_indirect`: ANGLE-on-SwiftShader, pure CPU.
 	# It's the only mode that satisfies both constraints we care about:
 	#   - ANGLE API → Pixel Launcher's drag-overlay (resize handles, reconfigure
@@ -158,3 +161,17 @@ test-worker: ## Run OAuth worker tests
 
 lint: ## Run lint checks
 	./gradlew :app:lintDebug :lint-rules:test
+
+# ── e2e ────────────────────────────────────────────────────────────────────────
+
+# Skips rebuild and reinstall; assumes the app is already on the device. Useful
+# for iterating on flow YAML without waiting for assembleReleaseTest each time.
+e2e-fast: ## Run all E2E flows without rebuilding or reinstalling the APK
+	$(MAKE) mock-oauth-start
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml || ($(MAKE) mock-oauth-stop; exit 1)
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/02_cancel.yaml || ($(MAKE) mock-oauth-stop; exit 1)
+	$(call reset-state)
+	$(MAESTRO) test e2e/flows/03_reconfigure.yaml || ($(MAKE) mock-oauth-stop; exit 1)
+	$(MAKE) mock-oauth-stop
