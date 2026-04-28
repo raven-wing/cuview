@@ -35,9 +35,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e
 
-      - name: Build releaseTest APK (R8 on, mock API, debug-signed)
-        run: ./gradlew assembleReleaseTest
-
       - name: Install Maestro
         env:
           MAESTRO_VERSION: "2.4.0"
@@ -45,15 +42,7 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
-      # `-gpu swangle_indirect` (ANGLE on SwiftShader, pure CPU) is the only
-      # backend that satisfies both:
-      #   - ANGLE API → Pixel Launcher's drag-overlay receives the reconfigure
-      #     pencil tap (flow 03). Under raw `swiftshader_indirect` it's dropped.
-      #   - SwiftShader backend → Chrome 113's GPU compositor doesn't segfault
-      #     during CCT page load (flow 01). Under `angle_indirect` on a GPU-less
-      #     runner, CompositorGpuTh hits a null vtable pointer (SIGSEGV) and
-      #     respawns in a crash loop, blocking the OAuth page from rendering.
-      # Local Makefile mirrors this for environment parity.
+      # GPU mode rationale: see start-emulator in Makefile.
       - name: Run emulator + Maestro flows
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
         with:
@@ -62,7 +51,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           emulator-options: -no-snapshot-save -no-window -gpu swangle_indirect -noaudio -no-boot-anim
-          script: make e2e-release
+          script: make e2e
 
       - name: Upload recordings and Maestro report
         if: always()
