@@ -3,8 +3,7 @@
 # Chrome shows FRE the first time it starts on a device/emulator AND after
 # `pm clear com.android.chrome` (which reset-state runs between flows so each
 # flow truly starts fresh). FRE blocks the CCT page from loading, so any flow
-# that opens a Chrome Custom Tab must run this first. The taps are marked
-# `optional: true` so this is a no-op if FRE is already dismissed.
+# that opens a Chrome Custom Tab must run this first.
 #
 # We press Home rather than stopApp so Chrome stays alive in the background.
 # stopApp kills the process before FRE dismissal is flushed to disk, causing

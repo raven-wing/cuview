@@ -9,8 +9,6 @@
 # Real mode: CCT opens ClickUp OAuth; the Cloudflare Worker fires the intent:// callback.
 appId: io.github.raven_wing.cuview
 ---
-# Dismiss Chrome's First Run dialog before opening the CCT — no-op if already
-# dismissed. Required because reset-state pm-clears Chrome between flows.
 - tapOn: "Connect with ClickUp"
 - extendedWaitUntil:
     visible: "Connect Workspace"
