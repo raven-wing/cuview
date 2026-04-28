@@ -10,7 +10,7 @@ AAB_RELEASE      := app/build/outputs/bundle/release/app-release.aab
 MAESTRO          := $(HOME)/.maestro/bin/maestro
 AVD_NAME         := pixel_6_api34_google_apis
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e e2e-act start-emulator mock-oauth-start mock-oauth-stop help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e _e2e-flows e2e-act start-emulator mock-oauth-start mock-oauth-stop help
 
 # ── shared: state reset between flows ──────────────────────────────────────────
 # Wipes launcher widget index and cuview data, cycles the cuview package so the
@@ -27,7 +27,7 @@ define reset-state
 	adb shell input keyevent KEYCODE_HOME
 	@ok=0; \
 	for i in $$(seq 1 20); do \
-	  if adb shell dumpsys appwidget 2>/dev/null | grep -q "$(PACKAGE)/"; then \
+	  if adb shell dumpsys appwidget 2>/dev/null | grep -Fq "$(PACKAGE)/"; then \
 	    ok=1; break; \
 	  fi; \
 	  sleep 1; \
@@ -62,13 +62,19 @@ e2e: ## Build releaseTest APK (R8 on, mock API, debug-signed) + run all E2E flow
 	adb shell settings put global transition_animation_scale 0
 	adb shell settings put global animator_duration_scale 0
 	$(MAKE) mock-oauth-start
-	$(call reset-state)
-	./e2e/run_with_recording.sh 01_disconnect_reconnect $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml || ($(MAKE) mock-oauth-stop; exit 1)
-	$(call reset-state)
-	./e2e/run_with_recording.sh 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml               || ($(MAKE) mock-oauth-stop; exit 1)
-	$(call reset-state)
-	./e2e/run_with_recording.sh 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml          || ($(MAKE) mock-oauth-stop; exit 1)
+	$(MAKE) _e2e-flows || { $(MAKE) mock-oauth-stop; exit 1; }
 	$(MAKE) mock-oauth-stop
+
+# Private target: runs all Maestro flows with state resets between them.
+# Kept separate so the single `|| mock-oauth-stop` in `e2e` covers all
+# failure paths — including reset-state failures — not just Maestro exits.
+_e2e-flows:
+	$(call reset-state)
+	./e2e/run_with_recording.sh 01_disconnect_reconnect $(MAESTRO) test e2e/flows/01_disconnect_reconnect.yaml
+	$(call reset-state)
+	./e2e/run_with_recording.sh 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml
+	$(call reset-state)
+	./e2e/run_with_recording.sh 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml
 
 # Runs the CI workflow locally via act + Podman.
 # Uses catthehacker/ubuntu:full-22.04 which matches ubuntu-latest (Android SDK + ANDROID_HOME included).
