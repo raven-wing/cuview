@@ -35,6 +35,13 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e
 
+      # Build before starting the emulator so Gradle doesn't compete with the
+      # emulator for CI's 2 CPUs. Chrome's swangle_indirect GPU compositor crashes
+      # under CPU pressure; building first keeps the emulator idle until the test runs.
+      # make e2e re-runs assembleReleaseTest but Gradle's UP-TO-DATE check makes it instant.
+      - name: Build releaseTest APK
+        run: ./gradlew assembleReleaseTest
+
       - name: Install Maestro
         env:
           MAESTRO_VERSION: "2.4.0"
