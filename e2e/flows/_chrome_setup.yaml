@@ -5,6 +5,10 @@
 # flow truly starts fresh). FRE blocks the CCT page from loading, so any flow
 # that opens a Chrome Custom Tab must run this first. The taps are marked
 # `optional: true` so this is a no-op if FRE is already dismissed.
+#
+# We press Home rather than stopApp so Chrome stays alive in the background.
+# stopApp kills the process before FRE dismissal is flushed to disk, causing
+# Chrome to show FRE again when the CCT opens — and the CCT page never loads.
 appId: com.android.chrome
 ---
 - launchApp:
@@ -15,5 +19,4 @@ appId: com.android.chrome
 - tapOn:
     text: "Use without an account"
     optional: true
-- stopApp:
-    appId: com.android.chrome
+- pressKey: Home
