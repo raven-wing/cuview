@@ -69,6 +69,6 @@ class _Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
-    server = HTTPServer(("0.0.0.0", port), _Handler)
+    server = HTTPServer(("127.0.0.1", port), _Handler)
     print(f"mock OAuth server on :{port}", flush=True)
     server.serve_forever()

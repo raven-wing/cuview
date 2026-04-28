@@ -28,10 +28,14 @@ define reset-state
 	adb shell pm disable $(PACKAGE) 2>/dev/null || true
 	adb shell pm enable $(PACKAGE) 2>/dev/null || true
 	adb shell input keyevent KEYCODE_HOME
-	@for i in $$(seq 1 20); do \
-	  adb shell dumpsys appwidget 2>/dev/null | grep -q "$(PACKAGE)/" && break; \
+	@ok=0; \
+	for i in $$(seq 1 20); do \
+	  if adb shell dumpsys appwidget 2>/dev/null | grep -q "$(PACKAGE)/"; then \
+	    ok=1; break; \
+	  fi; \
 	  sleep 1; \
-	done
+	done; \
+	[ $$ok -eq 1 ] || { echo "Widget provider did not re-register after 20s"; exit 1; }
 	@sleep 2
 endef
 

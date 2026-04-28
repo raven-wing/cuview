@@ -25,14 +25,13 @@ STATUS=0
 
 # SIGINT lets screenrecord finalize the mp4 cleanly.
 adb shell pkill -2 screenrecord 2>/dev/null || true
-sleep 2
+# Wait for the recorder process to exit and flush before pulling.
+wait "$SR_PID" 2>/dev/null || true
 adb pull "/sdcard/$NAME.mp4" "$DIR/recordings/$NAME.mp4" 2>/dev/null || true
 adb shell rm -f "/sdcard/$NAME.mp4" 2>/dev/null || true
 
 adb logcat -d -v time > "$DIR/recordings/logs/$NAME.logcat.txt" 2>/dev/null || true
 adb shell dumpsys activity top > "$DIR/recordings/logs/$NAME.activity-top.txt" 2>/dev/null || true
 adb shell dumpsys dropbox --print 2>/dev/null > "$DIR/recordings/logs/$NAME.dropbox.txt" || true
-
-wait "$SR_PID" 2>/dev/null || true
 
 exit "$STATUS"

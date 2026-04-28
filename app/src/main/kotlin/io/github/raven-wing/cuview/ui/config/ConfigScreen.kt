@@ -188,7 +188,7 @@ internal fun ConfigScreen(
                         // Persist state before launching the CCT so handleOAuthCallback /
                         // handleOAuthIntent can validate it even if the process is recreated.
                         context.getSharedPreferences(WidgetConfigActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
-                            .edit().putString(WidgetConfigActivity.KEY_PENDING_STATE, state).apply()
+                            .edit().putString(WidgetConfigActivity.KEY_PENDING_STATE, state).commit()
                         val authUrl = if (BuildConfig.USE_MOCK_API) {
                             // Use localhost:8765 + `adb reverse tcp:8765 tcp:8765` (set up
                             // by the e2e Makefile) instead of 10.0.2.2:8765. The 10.0.2.2
