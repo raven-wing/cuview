@@ -186,13 +186,8 @@ internal fun ConfigScreen(
                         context.getSharedPreferences(WidgetConfigActivity.PREFS_OAUTH_STATE, Context.MODE_PRIVATE)
                             .edit().putString(WidgetConfigActivity.KEY_PENDING_STATE, state).commit()
                         val authUrl = if (BuildConfig.USE_MOCK_API) {
-                            // Use localhost:8765 + `adb reverse tcp:8765 tcp:8765` (set up
-                            // by the e2e Makefile) instead of 10.0.2.2:8765. The 10.0.2.2
-                            // emulator-NAT path is unreliable on headless CI emulators
-                            // (-no-window): requests hang and Chrome never renders the
-                            // mock server's "Connect Workspace" page. adb-reverse forwards
-                            // device localhost:8765 to host:8765 directly via the adb
-                            // daemon, bypassing the emulator's internal network NAT.
+                            // localhost via `adb reverse` — 10.0.2.2 (emulator NAT) hangs
+                            // under -no-window on headless CI and Chrome never renders the page.
                             "http://localhost:8765/?state=$state"
                         } else {
                             val redirectUri = Uri.encode(BuildConfig.CLOUDFLARE_WORKER_URL)
@@ -201,11 +196,9 @@ internal fun ConfigScreen(
                                 "&redirect_uri=$redirectUri" +
                                 "&state=$state"
                         }
-                        // FLAG_ACTIVITY_NEW_TASK opens Chrome in its own task so that
-                        // WidgetConfigActivity remains in the launcher's task. The OAuth
-                        // callback (cuview:// intent) therefore lands in a fresh instance
-                        // handled by handleOAuthCallback, which calls moveTaskToFront to
-                        // bring the original instance back to the foreground.
+                        // Opens Chrome in its own task so WidgetConfigActivity stays in
+                        // the launcher's task; the cuview:// callback then reaches
+                        // handleOAuthCallback, which calls moveTaskToFront to restore it.
                         val cct = CustomTabsIntent.Builder().build()
                         cct.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         cct.launchUrl(context, Uri.parse(authUrl))
