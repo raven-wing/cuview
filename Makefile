@@ -161,7 +161,7 @@ stop-emulator: ## Stop running emulator (graceful via adb, falls back to PID kil
 	  if [ -n "$$pid" ] && ps -p "$$pid" -o command= 2>/dev/null | grep -Eq '(^|/)(emulator|qemu-system)($$| )'; then \
 	    kill "$$pid" 2>/dev/null; \
 	  fi
-	`@rm` -f /tmp/emulator.pid
+	@rm -f /tmp/emulator.pid
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease
