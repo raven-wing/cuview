@@ -2,6 +2,7 @@ local.properties
 *.iml
 .claude/
 .gradle/
+gradle/gradle-daemon-jvm.properties
 .idea/
 **/build/
 app/release/
@@ -13,3 +14,4 @@ worker/.wrangler/
 *.hprof
 captures/
 *.DS_Store
+e2e/recordings/

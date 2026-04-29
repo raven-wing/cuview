@@ -5,6 +5,7 @@
 # widget slot on the home screen. This flow verifies the activity exits cleanly.
 appId: io.github.raven_wing.cuview
 ---
+- runFlow: ./_chrome_setup.yaml
 - runFlow: ./_add_widget.yaml
 - assertVisible: "Connect with ClickUp"
 - pressKey: Back

@@ -1,17 +1,19 @@
-# Subflow: tap "Connect with ClickUp" → wait for "Connected ✓".
+# Subflow: tap "Connect with ClickUp" → complete OAuth via Chrome CCT → wait for "Connected ✓".
 #
 # Pre-condition:  WidgetConfigActivity is visible with "Connect with ClickUp" button.
 # Post-condition: "Connected ✓" is visible.
 #
-# Mock mode  (USE_MOCK_API=true): connects instantly, no browser opens.
-# Real mode  (USE_MOCK_API=false): Chrome Custom Tab opens for ClickUp OAuth.
-#   The Cloudflare Worker fires an intent:// callback which brings MainActivity
-#   to the front; "Connected ✓" appears once the token is saved.
-#   Chrome interaction (tapping "Connect Workspace") must happen out-of-band
-#   during a real-mode run.
+# Mock mode: CCT opens localhost:8765 (adb-reversed to the host mock server). The mock
+#   server echoes the app's state nonce back in the intent:// callback URL, which
+#   WidgetConfigActivity validates before saving the token.
+# Real mode: CCT opens ClickUp OAuth; the Cloudflare Worker fires the intent:// callback.
 appId: io.github.raven_wing.cuview
 ---
 - tapOn: "Connect with ClickUp"
+- extendedWaitUntil:
+    visible: "Connect Workspace"
+    timeout: 60000
+- tapOn: "Connect Workspace"
 - extendedWaitUntil:
     visible: "Connected ✓"
     timeout: 30000
