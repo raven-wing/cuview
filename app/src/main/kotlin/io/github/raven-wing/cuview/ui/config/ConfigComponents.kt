@@ -83,9 +83,11 @@ internal fun BrowseItem(
     }
 }
 
-// onCrumbClick[i] is called when parts[i] is tapped; size must equal parts.size - 1.
 @Composable
 internal fun BreadcrumbBar(parts: List<String>, onCrumbClick: List<() -> Unit>) {
+    require(onCrumbClick.size == parts.size - 1) {
+        "onCrumbClick must have ${parts.size - 1} entries for ${parts.size} parts, got ${onCrumbClick.size}"
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()

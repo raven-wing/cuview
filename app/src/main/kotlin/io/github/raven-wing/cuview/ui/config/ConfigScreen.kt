@@ -122,6 +122,14 @@ internal fun ConfigScreen(
     var selectedTheme by remember { mutableStateOf(WidgetTheme.fromId(initialThemeId)) }
     var oauthError by remember { mutableStateOf<String?>(null) }
 
+    fun goToRoot() {
+        navLevel = NavLevel.Root
+        spaceContentsState = null
+        folderViewsState = null
+        listViewsState = null
+        selectedTasksSource = null
+    }
+
     LaunchedEffect(pendingOAuthResult) {
         val result = pendingOAuthResult ?: return@LaunchedEffect
         // Token is already saved by WidgetConfigActivity.handleOAuthIntent / handleOAuthCallback.
@@ -136,12 +144,8 @@ internal fun ConfigScreen(
     LaunchedEffect(tokenState) {
         when (tokenState) {
             is TokenState.None -> {
-                navLevel = NavLevel.Root
+                goToRoot()
                 spacesState = null
-                spaceContentsState = null
-                folderViewsState = null
-                listViewsState = null
-                selectedTasksSource = null
                 previewState = PreviewState.Idle
             }
             is TokenState.Token -> {
@@ -150,7 +154,7 @@ internal fun ConfigScreen(
                     spacesState = callbacks.fetchSpaces(tokenState.value).toLoadState("Failed to load spaces")
                 }
             }
-            else -> Unit
+            is TokenState.Loading -> Unit
         }
     }
 
@@ -161,10 +165,9 @@ internal fun ConfigScreen(
             previewState = PreviewState.Idle
             return@LaunchedEffect
         }
-        val tasksSource = selectedTasksSource ?: return@LaunchedEffect
         val token = (tokenState as? TokenState.Token)?.value ?: return@LaunchedEffect
         previewState = PreviewState.Loading
-        val result = callbacks.previewTasksSource(tasksSource, token)
+        val result = callbacks.previewTasksSource(selectedTasksSource, token)
         previewState = result.fold(
             onSuccess = { PreviewState.Loaded(it) },
             onFailure = { PreviewState.Error(it.message ?: "Failed to load tasks") },
@@ -290,12 +293,7 @@ internal fun ConfigScreen(
                                 folderViewsState = null
                                 selectedTasksSource = null
                             },
-                            onBackToRoot = {
-                                navLevel = NavLevel.Root
-                                spaceContentsState = null
-                                folderViewsState = null
-                                selectedTasksSource = null
-                            },
+                            onBackToRoot = { goToRoot() },
                             onViewClick = { view ->
                                 previewState = PreviewState.Loading
                                 selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, level.folder.name, view.name))
@@ -326,13 +324,7 @@ internal fun ConfigScreen(
                                 listViewsState = null
                                 selectedTasksSource = null
                             },
-                            onBackToRoot = {
-                                navLevel = NavLevel.Root
-                                spaceContentsState = null
-                                folderViewsState = null
-                                listViewsState = null
-                                selectedTasksSource = null
-                            },
+                            onBackToRoot = { goToRoot() },
                             onBackToSpace = if (level.folder != null) {
                                 {
                                     navLevel = NavLevel.SpaceContents(level.space)

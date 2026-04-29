@@ -179,7 +179,7 @@ internal fun ListSelectionLevel(
         },
     )
 
-    val folderPart = folder?.let { " › ${it.name}" } ?: ""
+    val sourceParts = listOfNotNull(space.name, folder?.name, list.name)
     Spacer(Modifier.height(8.dp))
     SectionLabel("Select in ${list.name}")
 
@@ -190,7 +190,7 @@ internal fun ListSelectionLevel(
         selected = selectedTasksSource is TasksSource.List && selectedTasksSource.id == list.id,
         drillDown = false,
         onClick = {
-            onTasksSourceClick(TasksSource.List(list.id, "${space.name}$folderPart › ${list.name}"))
+            onTasksSourceClick(TasksSource.List(list.id, buildBreadcrumb(*sourceParts.toTypedArray())))
         },
     )
 
@@ -206,7 +206,7 @@ internal fun ListSelectionLevel(
                 selected = selectedTasksSource is TasksSource.View && selectedTasksSource.id == view.id,
                 drillDown = false,
                 onClick = {
-                    onTasksSourceClick(TasksSource.View(view.id, "${space.name}$folderPart › ${list.name} › ${view.name}"))
+                    onTasksSourceClick(TasksSource.View(view.id, buildBreadcrumb(*(sourceParts + view.name).toTypedArray())))
                 },
             )
         }

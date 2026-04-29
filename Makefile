@@ -16,6 +16,21 @@ EMULATOR_FLAGS   := -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save -accel 
 # Wipes launcher widget index and cuview data, cycles the cuview package so the
 # AppWidget service rebinds providers, restores the home screen, then polls until
 # cuview's widget provider is re-registered (a fixed sleep is unreliable on CI).
+define wait-for-boot
+	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
+	@timeout=300; \
+	until [ "$$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
+	  if ! kill -0 "$$(cat /tmp/emulator.pid)" 2>/dev/null; then \
+	    echo "Emulator process exited. Last 30 log lines:"; \
+	    tail -30 /tmp/emulator.log; \
+	    exit 1; \
+	  fi; \
+	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out"; exit 1; }; \
+	  sleep 3; timeout=$$((timeout - 3)); \
+	done; \
+	echo "Emulator booted (boot_completed=1)"
+endef
+
 define reset-state
 	adb shell am force-stop $(LAUNCHER) 2>/dev/null || true
 	adb shell am force-stop com.android.chrome 2>/dev/null || true
@@ -132,35 +147,13 @@ start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, headless) — ru
 	@rm -f /tmp/emulator.log
 	@nohup setsid emulator $(EMULATOR_FLAGS) -no-window \
 	  </dev/null >/tmp/emulator.log 2>&1 & echo $$! > /tmp/emulator.pid
-	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
-	@timeout=300; \
-	until [ "$$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
-	  if ! kill -0 "$$(cat /tmp/emulator.pid)" 2>/dev/null; then \
-	    echo "Emulator process exited. Last 30 log lines:"; \
-	    tail -30 /tmp/emulator.log; \
-	    exit 1; \
-	  fi; \
-	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out"; exit 1; }; \
-	  sleep 3; timeout=$$((timeout - 3)); \
-	done; \
-	echo "Emulator booted (boot_completed=1)"
+	$(call wait-for-boot)
 
 start-emulator-windowed: ## Start windowed emulator for local dev (same AVD + GPU as start-emulator)
 	@rm -f /tmp/emulator.log
 	@nohup setsid emulator $(EMULATOR_FLAGS) \
 	  </dev/null >/tmp/emulator.log 2>&1 & echo $$! > /tmp/emulator.pid
-	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
-	@timeout=300; \
-	until [ "$$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
-	  if ! kill -0 "$$(cat /tmp/emulator.pid)" 2>/dev/null; then \
-	    echo "Emulator process exited. Last 30 log lines:"; \
-	    tail -30 /tmp/emulator.log; \
-	    exit 1; \
-	  fi; \
-	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out"; exit 1; }; \
-	  sleep 3; timeout=$$((timeout - 3)); \
-	done; \
-	echo "Emulator booted (boot_completed=1)"
+	$(call wait-for-boot)
 
 stop-emulator: ## Stop running emulator (graceful via adb, falls back to PID kill)
 	-@adb emu kill 2>/dev/null
