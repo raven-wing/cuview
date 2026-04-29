@@ -2,7 +2,6 @@ MOCK_OAUTH_PID   := /tmp/cuview_mock_oauth.pid
 MOCK_OAUTH_PORT  := 8765
 PACKAGE          := io.github.raven_wing.cuview
 LAUNCHER         ?= com.google.android.apps.nexuslauncher
-MAESTRO_VERSION  := 2.4.0
 APK              := app/build/outputs/apk/debug/app-debug.apk
 APK_RELEASE      := app/build/outputs/apk/release/app-release.apk
 APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
@@ -128,11 +127,6 @@ start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — ru
 	# Stderr/stdout goes to /tmp/emulator.log; the polling loop checks the emulator
 	# PID before each iteration so a silent crash fails fast instead of timing out.
 	@rm -f /tmp/emulator.log
-	# `-cores 2 -memory 2048` constrains local resources to match GitHub Actions'
-	# emulator runner (2 vCPU, 2 GB RAM). Without this, your machine has more
-	# headroom than CI and timing-sensitive UI bugs (Chrome cold-start crashes,
-	# slow rendering) only repro on CI. Drop these two flags if you want full
-	# host resources for faster iteration once a flow is stable.
 	@nohup setsid emulator -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save \
 	  -accel on -gpu swangle_indirect -noaudio -no-boot-anim -no-window \
 	  </dev/null >/tmp/emulator.log 2>&1 & echo $$! > /tmp/emulator.pid
