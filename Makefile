@@ -94,10 +94,12 @@ mock-oauth-start: mock-oauth-stop ## Start local mock OAuth server (background);
 	@rm -f /tmp/mock_oauth.log
 	nohup setsid python3 e2e/mock_oauth_server.py $(MOCK_OAUTH_PORT) \
 	  </dev/null >/tmp/mock_oauth.log 2>&1 & echo $$! > $(MOCK_OAUTH_PID)
-	# Poll until the server actually serves a 200 — naked sleep is unreliable.
-	@for i in $$(seq 1 15); do \
+	# kill -0 before curl so a port collision (pre-existing server) can't false-pass.
+	@pid=$$(cat $(MOCK_OAUTH_PID)); \
+	for i in $$(seq 1 15); do \
+	  kill -0 $$pid 2>/dev/null || { echo "mock OAuth server crashed; log:"; tail -20 /tmp/mock_oauth.log; exit 1; }; \
 	  curl -fsS http://127.0.0.1:$(MOCK_OAUTH_PORT)/ -o /dev/null && \
-	    echo "mock OAuth server up on :$(MOCK_OAUTH_PORT) (PID $$(cat $(MOCK_OAUTH_PID)))" && break; \
+	    echo "mock OAuth server up on :$(MOCK_OAUTH_PORT) (PID $$pid)" && break; \
 	  [ $$i -eq 15 ] && { echo "mock OAuth server failed to start; log:"; tail -20 /tmp/mock_oauth.log; exit 1; }; \
 	  sleep 1; \
 	done
@@ -105,7 +107,7 @@ mock-oauth-start: mock-oauth-stop ## Start local mock OAuth server (background);
 	# the app's CCT URL `http://localhost:$(MOCK_OAUTH_PORT)/` reaches the mock server.
 	# This bypasses the emulator's internal NAT (10.0.2.2 → host) which is unreliable
 	# under -no-window headless mode on CI.
-	adb reverse tcp:$(MOCK_OAUTH_PORT) tcp:$(MOCK_OAUTH_PORT)
+	adb reverse tcp:$(MOCK_OAUTH_PORT) tcp:$(MOCK_OAUTH_PORT) || { $(MAKE) mock-oauth-stop; exit 1; }
 
 mock-oauth-stop: ## Stop local mock OAuth server (no-op if not running)
 	-@adb reverse --remove tcp:$(MOCK_OAUTH_PORT) 2>/dev/null
