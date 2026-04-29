@@ -164,8 +164,11 @@ start-emulator-windowed: ## Start windowed emulator for local dev (same AVD + GP
 
 stop-emulator: ## Stop running emulator (graceful via adb, falls back to PID kill)
 	-@adb emu kill 2>/dev/null
-	-@kill $$(cat /tmp/emulator.pid 2>/dev/null) 2>/dev/null
-	@rm -f /tmp/emulator.pid
+	-@pid=$$(cat /tmp/emulator.pid 2>/dev/null); \
+	  if [ -n "$$pid" ] && ps -p "$$pid" -o command= 2>/dev/null | grep -Eq '(^|/)(emulator|qemu-system)($$| )'; then \
+	    kill "$$pid" 2>/dev/null; \
+	  fi
+	`@rm` -f /tmp/emulator.pid
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease
