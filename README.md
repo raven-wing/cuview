@@ -69,7 +69,7 @@ Uses Robolectric for tests that need Android context; plain JUnit for pure Kotli
 
 ### End-to-end tests (Maestro)
 
-[Maestro](https://maestro.mobile.dev/) 2.4.0 must be installed (`curl -Ls "https://get.maestro.mobile.dev" | bash`).
+[Maestro](https://maestro.mobile.dev/) 2.4.0 must be installed (`MAESTRO_VERSION=2.4.0 curl -Ls "https://get.maestro.mobile.dev" | bash`).
 
 ```bash
 make e2e   # build releaseTest APK + install + run all flows (state reset between each)
