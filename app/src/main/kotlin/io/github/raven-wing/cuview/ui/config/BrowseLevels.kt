@@ -30,31 +30,24 @@ import io.github.raven_wing.cuview.data.repository.SpaceContents
 @Composable
 internal fun SpaceListLevel(
     spacesState: LoadState<List<CUSpace>>?,
-    onBrowse: () -> Unit,
+    onRetry: () -> Unit,
     onSpaceClick: (CUSpace) -> Unit,
 ) {
-    Button(
-        onClick = onBrowse,
-        enabled = spacesState !is LoadState.Loading,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        if (spacesState is LoadState.Loading) {
-            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-        } else {
-            Text(stringResource(R.string.config_browse_button))
+    when {
+        spacesState == null || spacesState is LoadState.Loading -> LoadingRow()
+        spacesState is LoadState.Failure -> {
+            Spacer(Modifier.height(8.dp))
+            Text(spacesState.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = onRetry, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.config_retry_button))
+            }
         }
-    }
-
-    if (spacesState is LoadState.Failure) {
-        Spacer(Modifier.height(8.dp))
-        Text(spacesState.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
-
-    if (spacesState is LoadState.Success && spacesState.data.isNotEmpty()) {
-        Spacer(Modifier.height(16.dp))
-        SectionLabel("Spaces")
-        spacesState.data.forEach { space ->
-            BrowseItem(text = space.name, selected = false, drillDown = true, onClick = { onSpaceClick(space) })
+        spacesState is LoadState.Success -> {
+            SectionLabel("Spaces")
+            spacesState.data.forEach { space ->
+                BrowseItem(text = space.name, selected = false, drillDown = true, onClick = { onSpaceClick(space) })
+            }
         }
     }
 }
@@ -71,7 +64,7 @@ internal fun SpaceContentsLevel(
     onFolderClick: (CUFolder) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BreadcrumbBar(parts = listOf("Spaces", space.name), onBack = onBack)
+    BreadcrumbBar(parts = listOf("Spaces", space.name), onCrumbClick = listOf(onBack))
 
     when (contentsState) {
         is LoadState.Loading -> LoadingRow()
@@ -121,10 +114,11 @@ internal fun FolderContentsLevel(
     viewsState: LoadState<List<CUView>>?,
     selectedTasksSource: TasksSource?,
     onBack: () -> Unit,
+    onBackToRoot: () -> Unit,
     onViewClick: (CUView) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BreadcrumbBar(parts = listOf("Spaces", space.name, folder.name), onBack = onBack)
+    BreadcrumbBar(parts = listOf("Spaces", space.name, folder.name), onCrumbClick = listOf(onBackToRoot, onBack))
 
     when (viewsState) {
         is LoadState.Loading -> LoadingRow()
@@ -167,6 +161,8 @@ internal fun ListSelectionLevel(
     viewsState: LoadState<List<CUView>>?,
     selectedTasksSource: TasksSource?,
     onBack: () -> Unit,
+    onBackToRoot: () -> Unit,
+    onBackToSpace: (() -> Unit)?,
     onTasksSourceClick: (TasksSource) -> Unit,
 ) {
     BreadcrumbBar(
@@ -176,7 +172,11 @@ internal fun ListSelectionLevel(
             folder?.let { add(it.name) }
             add(list.name)
         },
-        onBack = onBack,
+        onCrumbClick = buildList {
+            add(onBackToRoot)
+            onBackToSpace?.let { add(it) }
+            add(onBack)
+        },
     )
 
     val folderPart = folder?.let { " › ${it.name}" } ?: ""

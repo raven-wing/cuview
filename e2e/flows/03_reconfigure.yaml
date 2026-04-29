@@ -11,7 +11,6 @@ appId: io.github.raven_wing.cuview
 - assertVisible: "Connect with ClickUp"
 - runFlow: ./_connect.yaml
 - assertVisible: "Connected ✓"
-- assertVisible: "Browse Views"
 - runFlow: ./_browse.yaml
 - tapOn: "Save & Add Widget"
 - assertNotVisible: "Save & Add Widget"
@@ -36,7 +35,7 @@ appId: io.github.raven_wing.cuview
 - tapOn: "Light"
 
 # Change the selected view to Zebra (Mammals → Hoofed Animals → Zebra).
-- tapOn: "Browse Views"
+# Spaces auto-load on token arrival — no browse button needed.
 - extendedWaitUntil:
     visible:
       text: "Mammals"
@@ -51,7 +50,10 @@ appId: io.github.raven_wing.cuview
     timeout: 5000
 - tapOn: "Zebra"
 - assertVisible: "Zebra"
-- tapOn: "Zebra"
+- tapOn:
+    text: "Zebra"
+    index: 1
+- assertVisible: "3 tasks"
 
 # Save and verify config screen dismissed.
 - tapOn: "Save Changes"

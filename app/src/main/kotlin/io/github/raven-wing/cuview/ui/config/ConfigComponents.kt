@@ -83,12 +83,12 @@ internal fun BrowseItem(
     }
 }
 
+// onCrumbClick[i] is called when parts[i] is tapped; size must equal parts.size - 1.
 @Composable
-internal fun BreadcrumbBar(parts: List<String>, onBack: () -> Unit) {
+internal fun BreadcrumbBar(parts: List<String>, onCrumbClick: List<() -> Unit>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onBack)
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -96,10 +96,16 @@ internal fun BreadcrumbBar(parts: List<String>, onBack: () -> Unit) {
             text = "‹",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable(onClick = onCrumbClick.last()),
         )
         Spacer(Modifier.width(6.dp))
-        parts.dropLast(1).forEach { ancestor ->
-            Text(ancestor, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        parts.dropLast(1).forEachIndexed { i, ancestor ->
+            Text(
+                text = ancestor,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable(onClick = onCrumbClick[i]),
+            )
             Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(parts.last(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)

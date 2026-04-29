@@ -134,14 +134,23 @@ internal fun ConfigScreen(
     }
 
     LaunchedEffect(tokenState) {
-        if (tokenState is TokenState.None) {
-            navLevel = NavLevel.Root
-            spacesState = null
-            spaceContentsState = null
-            folderViewsState = null
-            listViewsState = null
-            selectedTasksSource = null
-            previewState = PreviewState.Idle
+        when (tokenState) {
+            is TokenState.None -> {
+                navLevel = NavLevel.Root
+                spacesState = null
+                spaceContentsState = null
+                folderViewsState = null
+                listViewsState = null
+                selectedTasksSource = null
+                previewState = PreviewState.Idle
+            }
+            is TokenState.Token -> {
+                if (spacesState == null) {
+                    spacesState = LoadState.Loading
+                    spacesState = callbacks.fetchSpaces(tokenState.value).toLoadState("Failed to load spaces")
+                }
+            }
+            else -> Unit
         }
     }
 
@@ -215,12 +224,8 @@ internal fun ConfigScreen(
                     when (val level = navLevel) {
                         is NavLevel.Root -> SpaceListLevel(
                             spacesState = spacesState,
-                            onBrowse = {
+                            onRetry = {
                                 spacesState = LoadState.Loading
-                                spaceContentsState = null
-                                folderViewsState = null
-                                listViewsState = null
-                                selectedTasksSource = null
                                 scope.launch {
                                     spacesState = callbacks.fetchSpaces(token).toLoadState("Failed to load spaces")
                                 }
@@ -285,6 +290,12 @@ internal fun ConfigScreen(
                                 folderViewsState = null
                                 selectedTasksSource = null
                             },
+                            onBackToRoot = {
+                                navLevel = NavLevel.Root
+                                spaceContentsState = null
+                                folderViewsState = null
+                                selectedTasksSource = null
+                            },
                             onViewClick = { view ->
                                 previewState = PreviewState.Loading
                                 selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, level.folder.name, view.name))
@@ -315,6 +326,21 @@ internal fun ConfigScreen(
                                 listViewsState = null
                                 selectedTasksSource = null
                             },
+                            onBackToRoot = {
+                                navLevel = NavLevel.Root
+                                spaceContentsState = null
+                                folderViewsState = null
+                                listViewsState = null
+                                selectedTasksSource = null
+                            },
+                            onBackToSpace = if (level.folder != null) {
+                                {
+                                    navLevel = NavLevel.SpaceContents(level.space)
+                                    folderViewsState = null
+                                    listViewsState = null
+                                    selectedTasksSource = null
+                                }
+                            } else null,
                             onTasksSourceClick = {
                                 previewState = PreviewState.Loading
                                 selectedTasksSource = it
