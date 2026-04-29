@@ -29,16 +29,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.raven_wing.cuview.widget.WidgetTheme
 
-internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" \u203a ")
+internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" › ")
 
 @Composable
 internal fun SectionLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-    )
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+    ) {
+        Text(
+            text = text.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+        )
+    }
 }
 
 @Composable
@@ -66,7 +74,7 @@ internal fun BrowseItem(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = if (drillDown) "\u203a" else if (selected) "\u2713" else "",
+                text = if (drillDown) "›" else if (selected) "✓" else "",
                 style = MaterialTheme.typography.titleMedium,
                 color = if (selected && !drillDown) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -76,7 +84,7 @@ internal fun BrowseItem(
 }
 
 @Composable
-internal fun BackRow(label: String, onBack: () -> Unit) {
+internal fun BreadcrumbBar(parts: List<String>, onBack: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -85,16 +93,16 @@ internal fun BackRow(label: String, onBack: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "\u2039",
+            text = "‹",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.width(6.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
+        parts.dropLast(1).forEach { ancestor ->
+            Text(ancestor, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(parts.last(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
     }
 }
 

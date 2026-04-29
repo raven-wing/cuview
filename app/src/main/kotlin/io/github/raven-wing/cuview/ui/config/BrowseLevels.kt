@@ -71,7 +71,7 @@ internal fun SpaceContentsLevel(
     onFolderClick: (CUFolder) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BackRow(label = "Spaces", onBack = onBack)
+    BreadcrumbBar(parts = listOf("Spaces", space.name), onBack = onBack)
 
     when (contentsState) {
         is LoadState.Loading -> LoadingRow()
@@ -124,7 +124,7 @@ internal fun FolderContentsLevel(
     onViewClick: (CUView) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BackRow(label = space.name, onBack = onBack)
+    BreadcrumbBar(parts = listOf("Spaces", space.name, folder.name), onBack = onBack)
 
     when (viewsState) {
         is LoadState.Loading -> LoadingRow()
@@ -169,9 +169,17 @@ internal fun ListSelectionLevel(
     onBack: () -> Unit,
     onTasksSourceClick: (TasksSource) -> Unit,
 ) {
-    BackRow(label = folder?.name ?: space.name, onBack = onBack)
+    BreadcrumbBar(
+        parts = buildList {
+            add("Spaces")
+            add(space.name)
+            folder?.let { add(it.name) }
+            add(list.name)
+        },
+        onBack = onBack,
+    )
 
-    val folderPart = folder?.let { " \u203a ${it.name}" } ?: ""
+    val folderPart = folder?.let { " › ${it.name}" } ?: ""
     Spacer(Modifier.height(8.dp))
     SectionLabel("Select in ${list.name}")
 
@@ -182,7 +190,7 @@ internal fun ListSelectionLevel(
         selected = selectedTasksSource is TasksSource.List && selectedTasksSource.id == list.id,
         drillDown = false,
         onClick = {
-            onTasksSourceClick(TasksSource.List(list.id, "${space.name}$folderPart \u203a ${list.name}"))
+            onTasksSourceClick(TasksSource.List(list.id, "${space.name}$folderPart › ${list.name}"))
         },
     )
 
@@ -198,7 +206,7 @@ internal fun ListSelectionLevel(
                 selected = selectedTasksSource is TasksSource.View && selectedTasksSource.id == view.id,
                 drillDown = false,
                 onClick = {
-                    onTasksSourceClick(TasksSource.View(view.id, "${space.name}$folderPart \u203a ${list.name} \u203a ${view.name}"))
+                    onTasksSourceClick(TasksSource.View(view.id, "${space.name}$folderPart › ${list.name} › ${view.name}"))
                 },
             )
         }

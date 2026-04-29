@@ -8,8 +8,9 @@ APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE      := app/build/outputs/bundle/release/app-release.aab
 MAESTRO          := $(HOME)/.maestro/bin/maestro
 AVD_NAME         := pixel_6_api34_google_apis
+EMULATOR_FLAGS   := -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save -accel on -gpu swangle_indirect -noaudio -no-boot-anim
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e _e2e-flows e2e-act start-emulator mock-oauth-start mock-oauth-stop help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e _e2e-flows e2e-act start-emulator start-emulator-windowed stop-emulator mock-oauth-start mock-oauth-stop help
 
 # ── shared: state reset between flows ──────────────────────────────────────────
 # Wipes launcher widget index and cuview data, cycles the cuview package so the
@@ -114,7 +115,7 @@ mock-oauth-stop: ## Stop local mock OAuth server (no-op if not running)
 	-@kill $$(cat $(MOCK_OAUTH_PID) 2>/dev/null) 2>/dev/null
 	@rm -f $(MOCK_OAUTH_PID)
 
-start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — run before make e2e
+start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, headless) — run before make e2e
 	# Both local and CI use `-gpu swangle_indirect`: ANGLE-on-SwiftShader, pure CPU.
 	# It's the only mode that satisfies both constraints we care about:
 	#   - ANGLE API → Pixel Launcher's drag-overlay (resize handles, reconfigure
@@ -129,8 +130,7 @@ start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — ru
 	# Stderr/stdout goes to /tmp/emulator.log; the polling loop checks the emulator
 	# PID before each iteration so a silent crash fails fast instead of timing out.
 	@rm -f /tmp/emulator.log
-	@nohup setsid emulator -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save \
-	  -accel on -gpu swangle_indirect -noaudio -no-boot-anim -no-window \
+	@nohup setsid emulator $(EMULATOR_FLAGS) -no-window \
 	  </dev/null >/tmp/emulator.log 2>&1 & echo $$! > /tmp/emulator.pid
 	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
 	@timeout=300; \
@@ -144,6 +144,28 @@ start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — ru
 	  sleep 3; timeout=$$((timeout - 3)); \
 	done; \
 	echo "Emulator booted (boot_completed=1)"
+
+start-emulator-windowed: ## Start windowed emulator for local dev (same AVD + GPU as start-emulator)
+	@rm -f /tmp/emulator.log
+	@nohup setsid emulator $(EMULATOR_FLAGS) \
+	  </dev/null >/tmp/emulator.log 2>&1 & echo $$! > /tmp/emulator.pid
+	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
+	@timeout=300; \
+	until [ "$$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
+	  if ! kill -0 "$$(cat /tmp/emulator.pid)" 2>/dev/null; then \
+	    echo "Emulator process exited. Last 30 log lines:"; \
+	    tail -30 /tmp/emulator.log; \
+	    exit 1; \
+	  fi; \
+	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out"; exit 1; }; \
+	  sleep 3; timeout=$$((timeout - 3)); \
+	done; \
+	echo "Emulator booted (boot_completed=1)"
+
+stop-emulator: ## Stop running emulator (graceful via adb, falls back to PID kill)
+	-@adb emu kill 2>/dev/null
+	-@kill $$(cat /tmp/emulator.pid 2>/dev/null) 2>/dev/null
+	@rm -f /tmp/emulator.pid
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease
