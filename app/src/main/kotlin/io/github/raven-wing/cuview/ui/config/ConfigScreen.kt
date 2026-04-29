@@ -165,9 +165,10 @@ internal fun ConfigScreen(
             previewState = PreviewState.Idle
             return@LaunchedEffect
         }
+        val tasksSource = selectedTasksSource ?: return@LaunchedEffect
         val token = (tokenState as? TokenState.Token)?.value ?: return@LaunchedEffect
         previewState = PreviewState.Loading
-        val result = callbacks.previewTasksSource(selectedTasksSource, token)
+        val result = callbacks.previewTasksSource(tasksSource, token)
         previewState = result.fold(
             onSuccess = { PreviewState.Loaded(it) },
             onFailure = { PreviewState.Error(it.message ?: "Failed to load tasks") },
