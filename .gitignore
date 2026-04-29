@@ -2,6 +2,7 @@ local.properties
 *.iml
 .claude/
 .gradle/
+gradle/gradle-daemon-jvm.properties
 .idea/
 **/build/
 app/release/
