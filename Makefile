@@ -25,7 +25,7 @@ define wait-for-boot
 	    tail -30 /tmp/emulator.log; \
 	    exit 1; \
 	  fi; \
-	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out"; exit 1; }; \
+	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out. Last 30 log lines:"; tail -30 /tmp/emulator.log; exit 1; }; \
 	  sleep 3; timeout=$$((timeout - 3)); \
 	done; \
 	echo "Emulator booted (boot_completed=1)"

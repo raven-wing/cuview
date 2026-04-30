@@ -121,6 +121,7 @@ internal fun ConfigScreen(
     }
     var selectedTheme by remember { mutableStateOf(WidgetTheme.fromId(initialThemeId)) }
     var oauthError by remember { mutableStateOf<String?>(null) }
+    var lastToken by remember { mutableStateOf<String?>(null) }
 
     fun goToRoot() {
         navLevel = NavLevel.Root
@@ -146,12 +147,14 @@ internal fun ConfigScreen(
             is TokenState.None -> {
                 goToRoot()
                 spacesState = null
+                lastToken = null
                 previewState = PreviewState.Idle
             }
             is TokenState.Token -> {
-                if (spacesState == null) {
+                if (spacesState == null || lastToken != tokenState.value) {
                     spacesState = LoadState.Loading
                     spacesState = callbacks.fetchSpaces(tokenState.value).toLoadState("Failed to load spaces")
+                    lastToken = tokenState.value
                 }
             }
             is TokenState.Loading -> Unit
