@@ -48,7 +48,8 @@ define reset-state
 	  sleep 1; \
 	done; \
 	[ $$ok -eq 1 ] || { echo "Widget provider did not re-register after 20s"; exit 1; }
-	@sleep 2
+	# Wait for launcher search index to catch up (provider registration != searchable).
+	@sleep 5
 endef
 
 help: ## Show this help
