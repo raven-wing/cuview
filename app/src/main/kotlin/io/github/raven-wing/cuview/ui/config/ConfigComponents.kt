@@ -34,12 +34,11 @@ import io.github.raven_wing.cuview.widget.WidgetTheme
 
 internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" › ")
 
+internal data class Crumb(val text: String, val onClick: (() -> Unit)? = null)
+
 @Composable
-internal fun BreadcrumbBar(parts: List<String>, onCrumbClick: List<() -> Unit>) {
-    require(parts.isNotEmpty()) { "BreadcrumbBar needs at least 1 part" }
-    require(onCrumbClick.size == parts.size) {
-        "onCrumbClick must have ${parts.size} entries for ${parts.size} parts, got ${onCrumbClick.size}"
-    }
+internal fun BreadcrumbBar(crumbs: List<Crumb>) {
+    require(crumbs.isNotEmpty()) { "BreadcrumbBar needs at least 1 crumb" }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -50,20 +49,17 @@ internal fun BreadcrumbBar(parts: List<String>, onCrumbClick: List<() -> Unit>) 
             imageVector = Icons.Default.Home,
             contentDescription = "Home",
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(onClick = onCrumbClick[0]),
+            modifier = Modifier.clickable(onClick = { crumbs[0].onClick?.invoke() }),
         )
-        parts.forEachIndexed { i, part ->
+        crumbs.forEach { crumb ->
             Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (i < parts.size - 1) {
-                Text(
-                    text = part,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable(onClick = onCrumbClick[i]),
-                )
-            } else {
-                Text(text = part, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
-            }
+            Text(
+                text = crumb.text,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (crumb.onClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                fontWeight = if (crumb.onClick != null) FontWeight.Normal else FontWeight.SemiBold,
+                modifier = if (crumb.onClick != null) Modifier.clickable(onClick = crumb.onClick) else Modifier,
+            )
         }
     }
 }

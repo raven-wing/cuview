@@ -59,12 +59,12 @@ internal fun SpaceContentsLevel(
     space: CUSpace,
     contentsState: LoadState<SpaceContents>?,
     selectedTasksSource: TasksSource?,
-    onBack: () -> Unit,
+    crumbs: List<Crumb>,
     onViewClick: (CUView) -> Unit,
     onFolderClick: (CUFolder) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BreadcrumbBar(parts = listOf(space.name), onCrumbClick = listOf(onBack))
+    BreadcrumbBar(crumbs = crumbs)
 
     when (contentsState) {
         is LoadState.Loading -> LoadingRow()
@@ -113,12 +113,11 @@ internal fun FolderContentsLevel(
     folder: CUFolder,
     viewsState: LoadState<List<CUView>>?,
     selectedTasksSource: TasksSource?,
-    onBack: () -> Unit,
-    onBackToRoot: () -> Unit,
+    crumbs: List<Crumb>,
     onViewClick: (CUView) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BreadcrumbBar(parts = listOf(space.name, folder.name), onCrumbClick = listOf(onBackToRoot, onBack))
+    BreadcrumbBar(crumbs = crumbs)
 
     when (viewsState) {
         is LoadState.Loading -> LoadingRow()
@@ -160,23 +159,10 @@ internal fun ListSelectionLevel(
     list: CUList,
     viewsState: LoadState<List<CUView>>?,
     selectedTasksSource: TasksSource?,
-    onBack: () -> Unit,
-    onBackToRoot: () -> Unit,
-    onBackToSpace: (() -> Unit)?,
+    crumbs: List<Crumb>,
     onTasksSourceClick: (TasksSource) -> Unit,
 ) {
-    BreadcrumbBar(
-        parts = buildList {
-            add(space.name)
-            folder?.let { add(it.name) }
-            add(list.name)
-        },
-        onCrumbClick = buildList {
-            add(onBackToRoot)
-            onBackToSpace?.let { add(it) }
-            add(onBack)
-        },
-    )
+    BreadcrumbBar(crumbs = crumbs)
 
     val sourceParts = listOfNotNull(space.name, folder?.name, list.name)
     Spacer(Modifier.height(8.dp))

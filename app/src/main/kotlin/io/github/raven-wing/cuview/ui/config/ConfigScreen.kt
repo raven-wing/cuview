@@ -255,11 +255,11 @@ internal fun ConfigScreen(
                             space = level.space,
                             contentsState = spaceContentsState,
                             selectedTasksSource = selectedTasksSource,
-                            onBack = {
+                            crumbs = listOf(Crumb(level.space.name, {
                                 navLevel = NavLevel.Root
                                 spaceContentsState = null
                                 selectedTasksSource = null
-                            },
+                            })),
                             onViewClick = { view ->
                                 previewState = PreviewState.Loading
                                 selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, view.name))
@@ -292,12 +292,14 @@ internal fun ConfigScreen(
                             folder = level.folder,
                             viewsState = folderViewsState,
                             selectedTasksSource = selectedTasksSource,
-                            onBack = {
-                                navLevel = NavLevel.SpaceContents(level.space)
-                                folderViewsState = null
-                                selectedTasksSource = null
-                            },
-                            onBackToRoot = { goToRoot() },
+                            crumbs = listOf(
+                                Crumb(level.space.name, { goToRoot() }),
+                                Crumb(level.folder.name, {
+                                    navLevel = NavLevel.SpaceContents(level.space)
+                                    folderViewsState = null
+                                    selectedTasksSource = null
+                                }),
+                            ),
                             onViewClick = { view ->
                                 previewState = PreviewState.Loading
                                 selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, level.folder.name, view.name))
@@ -320,23 +322,17 @@ internal fun ConfigScreen(
                             list = level.list,
                             viewsState = listViewsState,
                             selectedTasksSource = selectedTasksSource,
-                            onBack = {
-                                navLevel = if (level.folder != null)
-                                    NavLevel.FolderContents(level.space, level.folder)
-                                else
-                                    NavLevel.SpaceContents(level.space)
-                                listViewsState = null
-                                selectedTasksSource = null
-                            },
-                            onBackToRoot = { goToRoot() },
-                            onBackToSpace = if (level.folder != null) {
-                                {
-                                    navLevel = NavLevel.SpaceContents(level.space)
-                                    folderViewsState = null
-                                    listViewsState = null
-                                    selectedTasksSource = null
+                            crumbs = buildList {
+                                add(Crumb(level.space.name, { goToRoot() }))
+                                if (level.folder != null) {
+                                    add(Crumb(level.folder.name, {
+                                        navLevel = NavLevel.SpaceContents(level.space)
+                                        folderViewsState = null
+                                        listViewsState = null
+                                        selectedTasksSource = null
+                                    }))
                                 }
-                            } else null,
+                            },
                             onTasksSourceClick = {
                                 previewState = PreviewState.Loading
                                 selectedTasksSource = it
