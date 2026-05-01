@@ -1,3 +1,4 @@
+ADB_EMULATOR   := adb -e
 MOCK_OAUTH_PID   := /tmp/cuview_mock_oauth.pid
 MOCK_OAUTH_PORT  := 8765
 PACKAGE          := io.github.raven_wing.cuview
@@ -19,7 +20,7 @@ EMULATOR_FLAGS   := -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save -accel 
 define wait-for-boot
 	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
 	@timeout=300; \
-	until [ "$$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
+	until [ "$$($(ADB_EMULATOR) shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
 	  if ! kill -0 "$$(cat /tmp/emulator.pid)" 2>/dev/null; then \
 	    echo "Emulator process exited. Last 30 log lines:"; \
 	    tail -30 /tmp/emulator.log; \
@@ -157,9 +158,9 @@ start-emulator-windowed: ## Start windowed emulator for local dev (same AVD + GP
 	$(call wait-for-boot)
 
 stop-emulator: ## Stop running emulator (graceful via adb, falls back to PID kill)
-	-@adb emu kill 2>/dev/null
+	-@$(ADB_EMULATOR) emu kill 2>/dev/null
 	-@pid=$$(cat /tmp/emulator.pid 2>/dev/null); \
-	  if [ -n "$$pid" ] && ps -p "$$pid" -o command= 2>/dev/null | grep -Eq '(^|/)(emulator|qemu-system)($$| )'; then \
+	  if [ -n "$$pid" ] && ps -p "$$pid" -o command= 2>/dev/null | grep -Eq '(^|/)(emulator|qemu-system.*)($$| )'; then \
 	    kill "$$pid" 2>/dev/null; \
 	  fi
 	@rm -f /tmp/emulator.pid
