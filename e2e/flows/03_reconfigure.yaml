@@ -35,7 +35,6 @@ appId: io.github.raven_wing.cuview
 - tapOn: "Light"
 
 # Change the selected view to Zebra (Mammals → Hoofed Animals → Zebra).
-# Spaces auto-load on token arrival — no browse button needed.
 - extendedWaitUntil:
     visible:
       text: "Mammals"
