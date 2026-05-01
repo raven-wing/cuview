@@ -10,6 +10,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +66,7 @@ internal fun SpaceContentsLevel(
     onFolderClick: (CUFolder) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BreadcrumbBar(parts = listOf("Spaces", space.name), onCrumbClick = listOf(onBack))
+    BreadcrumbBar(parts = listOf(BreadcrumbPart.Icon(Icons.Default.Home, "Home"), BreadcrumbPart.Text(space.name)), onCrumbClick = listOf(onBack))
 
     when (contentsState) {
         is LoadState.Loading -> LoadingRow()
@@ -118,7 +120,7 @@ internal fun FolderContentsLevel(
     onViewClick: (CUView) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BreadcrumbBar(parts = listOf("Spaces", space.name, folder.name), onCrumbClick = listOf(onBackToRoot, onBack))
+    BreadcrumbBar(parts = listOf(BreadcrumbPart.Icon(Icons.Default.Home, "Home"), BreadcrumbPart.Text(space.name), BreadcrumbPart.Text(folder.name)), onCrumbClick = listOf(onBackToRoot, onBack))
 
     when (viewsState) {
         is LoadState.Loading -> LoadingRow()
@@ -167,10 +169,10 @@ internal fun ListSelectionLevel(
 ) {
     BreadcrumbBar(
         parts = buildList {
-            add("Spaces")
-            add(space.name)
-            folder?.let { add(it.name) }
-            add(list.name)
+            add(BreadcrumbPart.Icon(Icons.Default.Home, "Home"))
+            add(BreadcrumbPart.Text(space.name))
+            folder?.let { add(BreadcrumbPart.Text(it.name)) }
+            add(BreadcrumbPart.Text(list.name))
         },
         onCrumbClick = buildList {
             add(onBackToRoot)

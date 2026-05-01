@@ -17,19 +17,28 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.raven_wing.cuview.widget.WidgetTheme
 
 internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" › ")
+
+internal sealed interface BreadcrumbPart {
+    data class Text(val text: String) : BreadcrumbPart
+    data class Icon(val icon: ImageVector, val contentDescription: String) : BreadcrumbPart
+}
 
 @Composable
 internal fun SectionLabel(text: String) {
@@ -84,7 +93,7 @@ internal fun BrowseItem(
 }
 
 @Composable
-internal fun BreadcrumbBar(parts: List<String>, onCrumbClick: List<() -> Unit>) {
+internal fun BreadcrumbBar(parts: List<BreadcrumbPart>, onCrumbClick: List<() -> Unit>) {
     require(onCrumbClick.size == parts.size - 1) {
         "onCrumbClick must have ${parts.size - 1} entries for ${parts.size} parts, got ${onCrumbClick.size}"
     }
@@ -102,15 +111,30 @@ internal fun BreadcrumbBar(parts: List<String>, onCrumbClick: List<() -> Unit>) 
         )
         Spacer(Modifier.width(6.dp))
         parts.dropLast(1).forEachIndexed { i, ancestor ->
-            Text(
-                text = ancestor,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable(onClick = onCrumbClick[i]),
-            )
+            when (ancestor) {
+                is BreadcrumbPart.Icon -> {
+                    Icon(
+                        imageVector = ancestor.icon,
+                        contentDescription = ancestor.contentDescription,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onCrumbClick[i]),
+                    )
+                }
+                is BreadcrumbPart.Text -> {
+                    Text(
+                        text = ancestor.text,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onCrumbClick[i]),
+                    )
+                }
+            }
             Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(parts.last(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+        when (val last = parts.last()) {
+            is BreadcrumbPart.Text -> Text(last.text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            is BreadcrumbPart.Icon -> Icon(last.icon, contentDescription = last.contentDescription, tint = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 
