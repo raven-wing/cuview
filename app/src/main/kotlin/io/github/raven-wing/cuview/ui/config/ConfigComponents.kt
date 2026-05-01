@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,9 +34,38 @@ import io.github.raven_wing.cuview.widget.WidgetTheme
 
 internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" › ")
 
-internal sealed interface BreadcrumbPart {
-    data class Text(val text: String) : BreadcrumbPart
-    data class Icon(val icon: ImageVector, val contentDescription: String) : BreadcrumbPart
+@Composable
+internal fun BreadcrumbBar(parts: List<String>, onCrumbClick: List<() -> Unit>) {
+    require(parts.isNotEmpty()) { "BreadcrumbBar needs at least 1 part" }
+    require(onCrumbClick.size == parts.size) {
+        "onCrumbClick must have ${parts.size} entries for ${parts.size} parts, got ${onCrumbClick.size}"
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Home,
+            contentDescription = "Home",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable(onClick = onCrumbClick[0]),
+        )
+        parts.forEachIndexed { i, part ->
+            Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (i < parts.size - 1) {
+                Text(
+                    text = part,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable(onClick = onCrumbClick[i]),
+                )
+            } else {
+                Text(text = part, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
 }
 
 @Composable
@@ -88,52 +116,6 @@ internal fun BrowseItem(
                 color = if (selected && !drillDown) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-@Composable
-internal fun BreadcrumbBar(parts: List<BreadcrumbPart>, onCrumbClick: List<() -> Unit>) {
-    require(onCrumbClick.size == parts.size - 1) {
-        "onCrumbClick must have ${parts.size - 1} entries for ${parts.size} parts, got ${onCrumbClick.size}"
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "‹",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(onClick = onCrumbClick.last()),
-        )
-        Spacer(Modifier.width(6.dp))
-        parts.dropLast(1).forEachIndexed { i, ancestor ->
-            when (ancestor) {
-                is BreadcrumbPart.Icon -> {
-                    Icon(
-                        imageVector = ancestor.icon,
-                        contentDescription = ancestor.contentDescription,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable(onClick = onCrumbClick[i]),
-                    )
-                }
-                is BreadcrumbPart.Text -> {
-                    Text(
-                        text = ancestor.text,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable(onClick = onCrumbClick[i]),
-                    )
-                }
-            }
-            Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        when (val last = parts.last()) {
-            is BreadcrumbPart.Text -> Text(last.text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
-            is BreadcrumbPart.Icon -> Icon(last.icon, contentDescription = last.contentDescription, tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
