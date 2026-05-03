@@ -255,11 +255,10 @@ internal fun ConfigScreen(
                             space = level.space,
                             contentsState = spaceContentsState,
                             selectedTasksSource = selectedTasksSource,
-                            crumbs = listOf(Crumb(level.space.name, {
-                                navLevel = NavLevel.Root
-                                spaceContentsState = null
-                                selectedTasksSource = null
-                            })),
+                            crumbs = listOf(
+                                Crumb("", { goToRoot() }),
+                                Crumb(level.space.name),
+                            ),
                             onViewClick = { view ->
                                 previewState = PreviewState.Loading
                                 selectedTasksSource = TasksSource.View(view.id, buildBreadcrumb(level.space.name, view.name))
@@ -293,12 +292,13 @@ internal fun ConfigScreen(
                             viewsState = folderViewsState,
                             selectedTasksSource = selectedTasksSource,
                             crumbs = listOf(
-                                Crumb(level.space.name, { goToRoot() }),
-                                Crumb(level.folder.name, {
+                                Crumb("", { goToRoot() }),
+                                Crumb(level.space.name, {
                                     navLevel = NavLevel.SpaceContents(level.space)
                                     folderViewsState = null
                                     selectedTasksSource = null
                                 }),
+                                Crumb(level.folder.name),
                             ),
                             onViewClick = { view ->
                                 previewState = PreviewState.Loading
@@ -323,26 +323,21 @@ internal fun ConfigScreen(
                             viewsState = listViewsState,
                             selectedTasksSource = selectedTasksSource,
                             crumbs = buildList {
-                                add(Crumb(level.space.name, { goToRoot() }))
+                                add(Crumb("", { goToRoot() }))
+                                add(Crumb(level.space.name, {
+                                    navLevel = NavLevel.SpaceContents(level.space)
+                                    folderViewsState = null
+                                    listViewsState = null
+                                    selectedTasksSource = null
+                                }))
                                 if (level.folder != null) {
                                     add(Crumb(level.folder.name, {
-                                        navLevel = NavLevel.SpaceContents(level.space)
-                                        folderViewsState = null
-                                        listViewsState = null
-                                        selectedTasksSource = null
-                                    }))
-                                    add(Crumb(level.list.name, {
                                         navLevel = NavLevel.FolderContents(level.space, level.folder)
                                         listViewsState = null
                                         selectedTasksSource = null
                                     }))
-                                } else {
-                                    add(Crumb(level.list.name, {
-                                        navLevel = NavLevel.SpaceContents(level.space)
-                                        listViewsState = null
-                                        selectedTasksSource = null
-                                    }))
                                 }
+                                add(Crumb(level.list.name))
                             },
                             onTasksSourceClick = {
                                 previewState = PreviewState.Loading
