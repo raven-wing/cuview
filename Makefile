@@ -92,6 +92,8 @@ _e2e-flows:
 	./e2e/run_with_recording.sh 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml
 	$(call reset-state)
 	./e2e/run_with_recording.sh 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	$(call reset-state)
+	./e2e/run_with_recording.sh 04_breadcrumbs          $(MAESTRO) test e2e/flows/04_breadcrumbs.yaml
 
 # Runs the CI workflow locally via act + Podman.
 # Uses catthehacker/ubuntu:full-22.04 which matches ubuntu-latest (Android SDK + ANDROID_HOME included).

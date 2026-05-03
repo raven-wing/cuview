@@ -331,6 +331,17 @@ internal fun ConfigScreen(
                                         listViewsState = null
                                         selectedTasksSource = null
                                     }))
+                                    add(Crumb(level.list.name, {
+                                        navLevel = NavLevel.FolderContents(level.space, level.folder)
+                                        listViewsState = null
+                                        selectedTasksSource = null
+                                    }))
+                                } else {
+                                    add(Crumb(level.list.name, {
+                                        navLevel = NavLevel.SpaceContents(level.space)
+                                        listViewsState = null
+                                        selectedTasksSource = null
+                                    }))
                                 }
                             },
                             onTasksSourceClick = {
