@@ -2,11 +2,9 @@
 #
 # Pre-condition:  "Connected ✓" is visible; user is at the root nav level.
 # Post-condition: a target is selected and the task preview has loaded
-#                 (Save & Add Widget button is enabled).
+#                 (asserted via task name visibility — proxy for button enabled).
 appId: io.github.raven_wing.cuview
 ---
-- tapOn: "Browse Views"
-
 # Space level
 - extendedWaitUntil:
     visible: "Mammals"
@@ -28,5 +26,8 @@ appId: io.github.raven_wing.cuview
 - extendedWaitUntil:
     visible: "Horse"
     timeout: 5000
-- tapOn: "Horse"
+- tapOn:
+    text: "Horse"
+    index: 1 # first one is in breadcrumbs
+- assertVisible: "4 tasks"
 

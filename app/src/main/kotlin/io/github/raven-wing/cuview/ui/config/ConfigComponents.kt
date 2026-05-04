@@ -17,28 +17,79 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.raven_wing.cuview.widget.WidgetTheme
 
-internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" \u203a ")
+internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" › ")
+
+internal sealed class Crumb {
+    abstract val onClick: (() -> Unit)?
+
+    data class Root(override val onClick: (() -> Unit)? = null) : Crumb()
+    data class Item(val text: String, override val onClick: (() -> Unit)? = null) : Crumb()
+}
+
+@Composable
+internal fun BreadcrumbBar(crumbs: List<Crumb>) {
+    require(crumbs.isNotEmpty()) { "BreadcrumbBar needs at least 1 crumb" }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        crumbs.forEachIndexed { i, crumb ->
+            if (i > 0) Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when (crumb) {
+                is Crumb.Root -> Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable(onClick = { crumb.onClick?.invoke() }),
+                )
+                is Crumb.Item -> {
+                    val isClickable = crumb.onClick != null
+                    Text(
+                        text = crumb.text,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        fontWeight = if (isClickable) FontWeight.Normal else FontWeight.SemiBold,
+                        modifier = if (isClickable) Modifier.clickable(onClick = crumb.onClick!!) else Modifier,
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 internal fun SectionLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-    )
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+    ) {
+        Text(
+            text = text.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+        )
+    }
 }
 
 @Composable
@@ -66,35 +117,12 @@ internal fun BrowseItem(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = if (drillDown) "\u203a" else if (selected) "\u2713" else "",
+                text = if (drillDown) "›" else if (selected) "✓" else "",
                 style = MaterialTheme.typography.titleMedium,
                 color = if (selected && !drillDown) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@Composable
-internal fun BackRow(label: String, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onBack)
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "\u2039",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
     }
 }
 

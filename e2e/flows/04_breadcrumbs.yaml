@@ -1,0 +1,47 @@
+# Flow 04: breadcrumb navigation — navigate down, then jump back up via crumbs.
+#
+# Regression test for the unified BreadcrumbBar / Crumb navigation.
+# Verifies that clicking an ancestor crumb lands at the correct level.
+appId: io.github.raven_wing.cuview
+---
+# ── 0. Place widget + connect ────────────────────────────────────────────────
+- runFlow: ./_chrome_setup.yaml
+- runFlow: ./_add_widget.yaml
+- assertVisible: "Connect with ClickUp"
+- runFlow: ./_connect.yaml
+- assertVisible: "Connected ✓"
+
+# ── 1. Browse down to Horse ─────────────────────────────────────────────────
+# Space level
+- extendedWaitUntil:
+    visible: "Mammals"
+    timeout: 10000
+- tapOn: "Mammals"
+
+# Folder level
+- extendedWaitUntil:
+    visible: "Hoofed Animals"
+    timeout: 10000
+- tapOn: "Hoofed Animals"
+
+# List level
+- extendedWaitUntil:
+    visible: "Horse"
+    timeout: 10000
+- tapOn: "Horse"
+
+# List-selection level (tap the list item, not the breadcrumb one)
+- tapOn:
+    text: "Horse"
+    index: 1 # first one is in the breadcrumb bar
+- assertVisible: "4 tasks"
+
+# ── 2. Jump back to space level via breadcrumb ──────────────────────────────
+# Tap "Mammals" crumb → should land on space contents (Mammals level)
+- tapOn: "Mammals"
+- extendedWaitUntil:
+    visible: "Hoofed Animals"
+    timeout: 10000
+
+# ── 3. Verify the space-level content is correct ────────────────────────────
+- assertVisible: "Felines" # sibling folder proves we're at space contents, not root

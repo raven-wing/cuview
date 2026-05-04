@@ -1,3 +1,4 @@
+ADB_EMULATOR   := adb -e
 MOCK_OAUTH_PID   := /tmp/cuview_mock_oauth.pid
 MOCK_OAUTH_PORT  := 8765
 PACKAGE          := io.github.raven_wing.cuview
@@ -8,31 +9,48 @@ APK_RELEASE_TEST := app/build/outputs/apk/releaseTest/app-releaseTest.apk
 AAB_RELEASE      := app/build/outputs/bundle/release/app-release.aab
 MAESTRO          := $(HOME)/.maestro/bin/maestro
 AVD_NAME         := pixel_6_api34_google_apis
+EMULATOR_FLAGS   := -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save -accel on -gpu swangle_indirect -noaudio -no-boot-anim
 
-.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e _e2e-flows e2e-act start-emulator mock-oauth-start mock-oauth-stop help
+.PHONY: build install build-release install-release bundle test test-android test-worker lint e2e _e2e-flows e2e-act start-emulator start-emulator-windowed stop-emulator mock-oauth-start mock-oauth-stop help
 
 # ── shared: state reset between flows ──────────────────────────────────────────
 # Wipes launcher widget index and cuview data, cycles the cuview package so the
 # AppWidget service rebinds providers, restores the home screen, then polls until
 # cuview's widget provider is re-registered (a fixed sleep is unreliable on CI).
+define wait-for-boot
+	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
+	@timeout=300; \
+	until [ "$$($(ADB_EMULATOR) shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
+	  if ! kill -0 "$$(cat /tmp/emulator.pid)" 2>/dev/null; then \
+	    echo "Emulator process exited. Last 30 log lines:"; \
+	    tail -30 /tmp/emulator.log; \
+	    exit 1; \
+	  fi; \
+	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out. Last 30 log lines:"; tail -30 /tmp/emulator.log; exit 1; }; \
+	  sleep 3; timeout=$$((timeout - 3)); \
+	done; \
+	echo "Emulator booted (boot_completed=1)"
+endef
+
 define reset-state
-	adb shell am force-stop $(LAUNCHER) 2>/dev/null || true
-	adb shell am force-stop com.android.chrome 2>/dev/null || true
-	adb shell pm clear $(LAUNCHER) || true
-	adb shell pm clear com.android.chrome || true
-	adb shell pm clear $(PACKAGE)
-	adb shell pm disable $(PACKAGE) 2>/dev/null || true
-	adb shell pm enable $(PACKAGE) 2>/dev/null || true
-	adb shell input keyevent KEYCODE_HOME
+	$(ADB_EMULATOR) shell am force-stop $(LAUNCHER) 2>/dev/null || true
+	$(ADB_EMULATOR) shell am force-stop com.android.chrome 2>/dev/null || true
+	$(ADB_EMULATOR) shell pm clear $(LAUNCHER) || true
+	$(ADB_EMULATOR) shell pm clear com.android.chrome || true
+	$(ADB_EMULATOR) shell pm clear $(PACKAGE)
+	$(ADB_EMULATOR) shell pm disable $(PACKAGE) 2>/dev/null || true
+	$(ADB_EMULATOR) shell pm enable $(PACKAGE) 2>/dev/null || true
+	$(ADB_EMULATOR) shell input keyevent KEYCODE_HOME
 	@ok=0; \
 	for i in $$(seq 1 20); do \
-	  if adb shell dumpsys appwidget 2>/dev/null | grep -Fq "$(PACKAGE)/"; then \
+	  if $(ADB_EMULATOR) shell dumpsys appwidget 2>/dev/null | grep -Fq "$(PACKAGE)/"; then \
 	    ok=1; break; \
 	  fi; \
 	  sleep 1; \
 	done; \
 	[ $$ok -eq 1 ] || { echo "Widget provider did not re-register after 20s"; exit 1; }
-	@sleep 2
+	# Wait for launcher search index to catch up (provider registration != searchable).
+	@sleep 5
 endef
 
 help: ## Show this help
@@ -74,6 +92,8 @@ _e2e-flows:
 	./e2e/run_with_recording.sh 02_cancel               $(MAESTRO) test e2e/flows/02_cancel.yaml
 	$(call reset-state)
 	./e2e/run_with_recording.sh 03_reconfigure          $(MAESTRO) test e2e/flows/03_reconfigure.yaml
+	$(call reset-state)
+	./e2e/run_with_recording.sh 04_breadcrumbs          $(MAESTRO) test e2e/flows/04_breadcrumbs.yaml
 
 # Runs the CI workflow locally via act + Podman.
 # Uses catthehacker/ubuntu:full-22.04 which matches ubuntu-latest (Android SDK + ANDROID_HOME included).
@@ -114,7 +134,7 @@ mock-oauth-stop: ## Stop local mock OAuth server (no-op if not running)
 	-@kill $$(cat $(MOCK_OAUTH_PID) 2>/dev/null) 2>/dev/null
 	@rm -f $(MOCK_OAUTH_PID)
 
-start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — run before make e2e
+start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, headless) — run before make e2e
 	# Both local and CI use `-gpu swangle_indirect`: ANGLE-on-SwiftShader, pure CPU.
 	# It's the only mode that satisfies both constraints we care about:
 	#   - ANGLE API → Pixel Launcher's drag-overlay (resize handles, reconfigure
@@ -129,21 +149,23 @@ start-emulator: ## Start CI-matching emulator (Pixel 6, API 34, windowed) — ru
 	# Stderr/stdout goes to /tmp/emulator.log; the polling loop checks the emulator
 	# PID before each iteration so a silent crash fails fast instead of timing out.
 	@rm -f /tmp/emulator.log
-	@nohup setsid emulator -avd $(AVD_NAME) -no-snapshot-load -no-snapshot-save \
-	  -accel on -gpu swangle_indirect -noaudio -no-boot-anim -no-window \
+	@nohup setsid emulator $(EMULATOR_FLAGS) -no-window \
 	  </dev/null >/tmp/emulator.log 2>&1 & echo $$! > /tmp/emulator.pid
-	@echo "Emulator PID $$(cat /tmp/emulator.pid); log: /tmp/emulator.log"
-	@timeout=300; \
-	until [ "$$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do \
-	  if ! kill -0 "$$(cat /tmp/emulator.pid)" 2>/dev/null; then \
-	    echo "Emulator process exited. Last 30 log lines:"; \
-	    tail -30 /tmp/emulator.log; \
-	    exit 1; \
-	  fi; \
-	  [ $$timeout -le 0 ] && { echo "Emulator boot timed out"; exit 1; }; \
-	  sleep 3; timeout=$$((timeout - 3)); \
-	done; \
-	echo "Emulator booted (boot_completed=1)"
+	$(call wait-for-boot)
+
+start-emulator-windowed: ## Start windowed emulator for local dev (same AVD + GPU as start-emulator)
+	@rm -f /tmp/emulator.log
+	@nohup setsid emulator $(EMULATOR_FLAGS) \
+	  </dev/null >/tmp/emulator.log 2>&1 & echo $$! > /tmp/emulator.pid
+	$(call wait-for-boot)
+
+stop-emulator: ## Stop running emulator (graceful via adb, falls back to PID kill)
+	-@$(ADB_EMULATOR) emu kill 2>/dev/null
+	-@pid=$$(cat /tmp/emulator.pid 2>/dev/null); \
+	  if [ -n "$$pid" ] && ps -p "$$pid" -o command= 2>/dev/null | grep -Eq '(^|/)(emulator|qemu-system.*)($$| )'; then \
+	    kill "$$pid" 2>/dev/null; \
+	  fi
+	@rm -f /tmp/emulator.pid
 
 bundle: ## Build release AAB for Play Store upload
 	./gradlew bundleRelease

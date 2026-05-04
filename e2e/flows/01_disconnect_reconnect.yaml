@@ -27,7 +27,6 @@ appId: io.github.raven_wing.cuview
 - assertVisible: "Connected ✓"
 
 # ── 4. Browse views ───────────────────────────────────────────────────────────
-- assertVisible: "Browse Views"
 - runFlow: ./_browse.yaml
 
 # ── 5. Save ───────────────────────────────────────────────────────────────────

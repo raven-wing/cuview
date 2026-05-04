@@ -30,31 +30,24 @@ import io.github.raven_wing.cuview.data.repository.SpaceContents
 @Composable
 internal fun SpaceListLevel(
     spacesState: LoadState<List<CUSpace>>?,
-    onBrowse: () -> Unit,
+    onRetry: () -> Unit,
     onSpaceClick: (CUSpace) -> Unit,
 ) {
-    Button(
-        onClick = onBrowse,
-        enabled = spacesState !is LoadState.Loading,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        if (spacesState is LoadState.Loading) {
-            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-        } else {
-            Text(stringResource(R.string.config_browse_button))
+    when {
+        spacesState == null || spacesState is LoadState.Loading -> LoadingRow()
+        spacesState is LoadState.Failure -> {
+            Spacer(Modifier.height(8.dp))
+            Text(spacesState.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = onRetry, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.config_retry_button))
+            }
         }
-    }
-
-    if (spacesState is LoadState.Failure) {
-        Spacer(Modifier.height(8.dp))
-        Text(spacesState.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
-
-    if (spacesState is LoadState.Success && spacesState.data.isNotEmpty()) {
-        Spacer(Modifier.height(16.dp))
-        SectionLabel("Spaces")
-        spacesState.data.forEach { space ->
-            BrowseItem(text = space.name, selected = false, drillDown = true, onClick = { onSpaceClick(space) })
+        spacesState is LoadState.Success -> {
+            SectionLabel("Spaces")
+            spacesState.data.forEach { space ->
+                BrowseItem(text = space.name, selected = false, drillDown = true, onClick = { onSpaceClick(space) })
+            }
         }
     }
 }
@@ -66,12 +59,12 @@ internal fun SpaceContentsLevel(
     space: CUSpace,
     contentsState: LoadState<SpaceContents>?,
     selectedTasksSource: TasksSource?,
-    onBack: () -> Unit,
+    crumbs: List<Crumb>,
     onViewClick: (CUView) -> Unit,
     onFolderClick: (CUFolder) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BackRow(label = "Spaces", onBack = onBack)
+    BreadcrumbBar(crumbs = crumbs)
 
     when (contentsState) {
         is LoadState.Loading -> LoadingRow()
@@ -120,11 +113,11 @@ internal fun FolderContentsLevel(
     folder: CUFolder,
     viewsState: LoadState<List<CUView>>?,
     selectedTasksSource: TasksSource?,
-    onBack: () -> Unit,
+    crumbs: List<Crumb>,
     onViewClick: (CUView) -> Unit,
     onListClick: (CUList) -> Unit,
 ) {
-    BackRow(label = space.name, onBack = onBack)
+    BreadcrumbBar(crumbs = crumbs)
 
     when (viewsState) {
         is LoadState.Loading -> LoadingRow()
@@ -166,12 +159,12 @@ internal fun ListSelectionLevel(
     list: CUList,
     viewsState: LoadState<List<CUView>>?,
     selectedTasksSource: TasksSource?,
-    onBack: () -> Unit,
+    crumbs: List<Crumb>,
     onTasksSourceClick: (TasksSource) -> Unit,
 ) {
-    BackRow(label = folder?.name ?: space.name, onBack = onBack)
+    BreadcrumbBar(crumbs = crumbs)
 
-    val folderPart = folder?.let { " \u203a ${it.name}" } ?: ""
+    val sourceParts = listOfNotNull(space.name, folder?.name, list.name)
     Spacer(Modifier.height(8.dp))
     SectionLabel("Select in ${list.name}")
 
@@ -182,7 +175,7 @@ internal fun ListSelectionLevel(
         selected = selectedTasksSource is TasksSource.List && selectedTasksSource.id == list.id,
         drillDown = false,
         onClick = {
-            onTasksSourceClick(TasksSource.List(list.id, "${space.name}$folderPart \u203a ${list.name}"))
+            onTasksSourceClick(TasksSource.List(list.id, buildBreadcrumb(*sourceParts.toTypedArray())))
         },
     )
 
@@ -198,7 +191,7 @@ internal fun ListSelectionLevel(
                 selected = selectedTasksSource is TasksSource.View && selectedTasksSource.id == view.id,
                 drillDown = false,
                 onClick = {
-                    onTasksSourceClick(TasksSource.View(view.id, "${space.name}$folderPart \u203a ${list.name} \u203a ${view.name}"))
+                    onTasksSourceClick(TasksSource.View(view.id, buildBreadcrumb(*sourceParts.toTypedArray(), view.name)))
                 },
             )
         }

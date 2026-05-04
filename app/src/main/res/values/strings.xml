@@ -5,7 +5,7 @@
     <string name="config_title">Configure CU View</string>
     <string name="config_api_token_label">API Token</string>
     <string name="config_api_token_placeholder">pk_…</string>
-    <string name="config_browse_button">Browse Views</string>
+    <string name="config_retry_button">Retry</string>
     <string name="config_select_view_label">Select View</string>
     <string name="config_save_button">Save &amp; Add Widget</string>
     <string name="config_update_button">Save Changes</string>
