@@ -59,13 +59,16 @@ internal fun BreadcrumbBar(crumbs: List<Crumb>) {
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable(onClick = { crumb.onClick?.invoke() }),
                 )
-                is Crumb.Item -> Text(
-                    text = crumb.text,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (crumb.onClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = if (crumb.onClick != null) FontWeight.Normal else FontWeight.SemiBold,
-                    modifier = if (crumb.onClick != null) Modifier.clickable(onClick = crumb.onClick) else Modifier,
-                )
+                is Crumb.Item -> {
+                    val isClickable = crumb.onClick != null
+                    Text(
+                        text = crumb.text,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        fontWeight = if (isClickable) FontWeight.Normal else FontWeight.SemiBold,
+                        modifier = if (isClickable) Modifier.clickable(onClick = crumb.onClick!!) else Modifier,
+                    )
+                }
             }
         }
     }

@@ -33,17 +33,17 @@ define wait-for-boot
 endef
 
 define reset-state
-	adb shell am force-stop $(LAUNCHER) 2>/dev/null || true
-	adb shell am force-stop com.android.chrome 2>/dev/null || true
-	adb shell pm clear $(LAUNCHER) || true
-	adb shell pm clear com.android.chrome || true
-	adb shell pm clear $(PACKAGE)
-	adb shell pm disable $(PACKAGE) 2>/dev/null || true
-	adb shell pm enable $(PACKAGE) 2>/dev/null || true
-	adb shell input keyevent KEYCODE_HOME
+	$(ADB_EMULATOR) shell am force-stop $(LAUNCHER) 2>/dev/null || true
+	$(ADB_EMULATOR) shell am force-stop com.android.chrome 2>/dev/null || true
+	$(ADB_EMULATOR) shell pm clear $(LAUNCHER) || true
+	$(ADB_EMULATOR) shell pm clear com.android.chrome || true
+	$(ADB_EMULATOR) shell pm clear $(PACKAGE)
+	$(ADB_EMULATOR) shell pm disable $(PACKAGE) 2>/dev/null || true
+	$(ADB_EMULATOR) shell pm enable $(PACKAGE) 2>/dev/null || true
+	$(ADB_EMULATOR) shell input keyevent KEYCODE_HOME
 	@ok=0; \
 	for i in $$(seq 1 20); do \
-	  if adb shell dumpsys appwidget 2>/dev/null | grep -Fq "$(PACKAGE)/"; then \
+	  if $(ADB_EMULATOR) shell dumpsys appwidget 2>/dev/null | grep -Fq "$(PACKAGE)/"; then \
 	    ok=1; break; \
 	  fi; \
 	  sleep 1; \

@@ -191,7 +191,7 @@ internal fun ListSelectionLevel(
                 selected = selectedTasksSource is TasksSource.View && selectedTasksSource.id == view.id,
                 drillDown = false,
                 onClick = {
-                    onTasksSourceClick(TasksSource.View(view.id, buildBreadcrumb(*(sourceParts + view.name).toTypedArray())))
+                    onTasksSourceClick(TasksSource.View(view.id, buildBreadcrumb(*sourceParts.toTypedArray(), view.name)))
                 },
             )
         }
