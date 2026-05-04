@@ -34,7 +34,12 @@ import io.github.raven_wing.cuview.widget.WidgetTheme
 
 internal fun buildBreadcrumb(vararg parts: String): String = parts.joinToString(" › ")
 
-internal data class Crumb(val text: String, val onClick: (() -> Unit)? = null)
+internal sealed class Crumb {
+    abstract val onClick: (() -> Unit)?
+
+    data class Root(override val onClick: (() -> Unit)? = null) : Crumb()
+    data class Item(val text: String, override val onClick: (() -> Unit)? = null) : Crumb()
+}
 
 @Composable
 internal fun BreadcrumbBar(crumbs: List<Crumb>) {
@@ -45,21 +50,23 @@ internal fun BreadcrumbBar(crumbs: List<Crumb>) {
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = Icons.Default.Home,
-            contentDescription = "Home",
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(onClick = { crumbs[0].onClick?.invoke() }),
-        )
-        crumbs.drop(1).forEach { crumb ->
-            Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                text = crumb.text,
-                style = MaterialTheme.typography.labelMedium,
-                color = if (crumb.onClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                fontWeight = if (crumb.onClick != null) FontWeight.Normal else FontWeight.SemiBold,
-                modifier = if (crumb.onClick != null) Modifier.clickable(onClick = crumb.onClick) else Modifier,
-            )
+        crumbs.forEachIndexed { i, crumb ->
+            if (i > 0) Text(" › ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when (crumb) {
+                is Crumb.Root -> Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable(onClick = { crumb.onClick?.invoke() }),
+                )
+                is Crumb.Item -> Text(
+                    text = crumb.text,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (crumb.onClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = if (crumb.onClick != null) FontWeight.Normal else FontWeight.SemiBold,
+                    modifier = if (crumb.onClick != null) Modifier.clickable(onClick = crumb.onClick) else Modifier,
+                )
+            }
         }
     }
 }
